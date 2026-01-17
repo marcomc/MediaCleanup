@@ -1,0 +1,183 @@
+---
+
+description: "Task list for organizing TV shows by series and season"
+---
+
+# Tasks: Organize TV Shows by Series and Season
+
+**Input**: Design documents from `/specs/001-organize-tv-shows/`
+**Prerequisites**: plan.md (required), spec.md (required for user stories),
+research.md, data-model.md, contracts/
+
+**Tests**: Tests are not requested for this feature.
+
+**Organization**: Tasks are grouped by user story to enable independent
+implementation and testing of each story.
+
+## Format: `[ID] [P?] [Story] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
+- Include exact file paths in descriptions
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: Project initialization and basic structure
+
+- [ ] T001 Review and document folder organization behavior in README.md
+- [ ] T002 [P] Add season/series detection notes to cleanup_media.sh
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**Purpose**: Core infrastructure that MUST be complete before ANY user story
+can be implemented
+
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete
+
+- [ ] T003 Implement series/season parsing helpers in cleanup_media.sh
+- [ ] T004 Implement `.tvshow` marker detection/creation in cleanup_media.sh
+- [ ] T005 Implement case-insensitive series folder lookup in cleanup_media.sh
+- [ ] T006 Implement allowed-extension filtering for organization in
+  cleanup_media.sh
+- [ ] T007 Implement explicit handling for unparseable files in
+  cleanup_media.sh
+
+**Checkpoint**: Foundation ready - user story implementation can now begin in
+parallel
+
+---
+
+## Phase 3: User Story 1 - Organize Episodes by Series (Priority: P1) 🎯 MVP
+
+**Goal**: Place episode files into `Series.Name/Sxx/` folders based on filename
+series/season tokens.
+
+**Independent Test**: Drop multiple `Series.Name.S07E*.mkv` files in a root
+folder and verify they land in `Series.Name/S07/`.
+
+### Implementation for User Story 1
+
+- [ ] T008 [US1] Create series folder (if missing) in cleanup_media.sh
+- [ ] T009 [US1] Create season subfolder (if missing) in cleanup_media.sh
+- [ ] T010 [US1] Move eligible episode files to series/season folders in
+  cleanup_media.sh
+
+**Checkpoint**: User Story 1 should be fully functional and testable
+independently
+
+---
+
+## Phase 4: User Story 2 - Normalize and Flatten Incoming Drops (Priority: P2)
+
+**Goal**: Ensure files in random subfolders are flattened and normalized before
+organization.
+
+**Independent Test**: Place episodes inside nested folders and confirm they are
+flattened to the root, renamed, then organized.
+
+### Implementation for User Story 2
+
+- [ ] T011 [US2] Move nested files to root before normalization in
+  cleanup_media.sh
+- [ ] T012 [US2] Ensure normalization runs before series/season organization in
+  cleanup_media.sh
+
+**Checkpoint**: User Story 2 should be fully functional and testable
+independently
+
+---
+
+## Phase 5: User Story 3 - Preserve TV Series Folders (Priority: P3)
+
+**Goal**: Distinguish series folders from temporary drop folders to avoid
+accidental deletion or flattening.
+
+**Independent Test**: Add `.tvshow` markers to existing series folders and
+confirm they are preserved during cleanup.
+
+### Implementation for User Story 3
+
+- [ ] T013 [US3] Skip flattening directories containing `.tvshow` in
+  cleanup_media.sh
+- [ ] T014 [US3] Ensure marker is created for new series folders in
+  cleanup_media.sh
+
+**Checkpoint**: User Story 3 should be fully functional and testable
+independently
+
+---
+
+## Phase 6: Polish & Cross-Cutting Concerns
+
+**Purpose**: Improvements that affect multiple user stories
+
+- [ ] T015 [P] Add logging for all move/rename/delete actions in
+  cleanup_media.sh
+- [ ] T016 Update README.md with new folder structure examples
+- [ ] T017 [P] Run shellcheck on cleanup_media.sh (if available)
+- [ ] T018 [P] Run markdownlint on updated Markdown files
+- [ ] T019 [P] Validate runtime duration on a sample library and note results in
+  README.md
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: No dependencies - can start immediately
+- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user
+  stories
+- **User Stories (Phase 3+)**: All depend on Foundational phase completion
+  - User stories can then proceed in parallel (if staffed)
+  - Or sequentially in priority order (P1 → P2 → P3)
+- **Polish (Final Phase)**: Depends on all desired user stories being complete
+
+### User Story Dependencies
+
+- **User Story 1 (P1)**: Can start after Foundational (Phase 2)
+- **User Story 2 (P2)**: Can start after Foundational (Phase 2)
+- **User Story 3 (P3)**: Can start after Foundational (Phase 2)
+
+### Within Each User Story
+
+- Parsing helpers before folder creation
+- Folder creation before file moves
+- Marker rules before skip/cleanup behavior
+
+### Parallel Opportunities
+
+- T002, T015, T017, T018, and T019 can run in parallel with other tasks
+- T008 and T009 can run in parallel after parsing helpers are complete
+- T013 and T014 can run in parallel with other story tasks once markers exist
+
+---
+
+## Parallel Example: User Story 1
+
+```bash
+Task: "Create series folder (if missing) in cleanup_media.sh"
+Task: "Create season subfolder (if missing) in cleanup_media.sh"
+```
+
+---
+
+## Implementation Strategy
+
+### MVP First (User Story 1 Only)
+
+1. Complete Phase 1: Setup
+2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
+3. Complete Phase 3: User Story 1
+4. **STOP and VALIDATE**: Test User Story 1 independently
+5. Expand to additional stories if desired
+
+### Incremental Delivery
+
+1. Complete Setup + Foundational → Foundation ready
+2. Add User Story 1 → Test independently → Validate
+3. Add User Story 2 → Test independently → Validate
+4. Add User Story 3 → Test independently → Validate
+5. Polish and documentation
