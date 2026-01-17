@@ -36,8 +36,11 @@ Notes:
 - If `~/.mediacleanup.conf` is missing, the script seeds it from
   `mediacleanup.conf.sample` and exits so you can personalize it before
   rerunning.
-- The rename log lines look like `Renaming Old.Name.mkv to New.Name.mkv` and can
-  be used by `rename.sh`.
+- The script emits pre-execution action logs for moves, renames, deletes, and
+  empty directory removals in the format `ACTION SOURCE -> DEST` to stdout.
+- A structured action list is written to `/tmp/mediacleanup/action-list-<timestamp>.txt`
+  with tab-separated fields: `ACTION<TAB>SOURCE<TAB>DEST`. This file can be used
+  to compare runs or drive reversibility tooling.
 
 Performance notes:
 

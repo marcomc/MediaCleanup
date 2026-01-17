@@ -22,7 +22,7 @@ description: "Task list for Cleanup Script Optimization"
 **Purpose**: Establish baseline measurements and artifacts
 
 - [x] T001 Create baseline benchmark log in `specs/003-optimize-cleanup-script/benchmarks.md` with dataset description and initial runtime/action list snapshot
-- [ ] T002 [P] Capture baseline action list output in `specs/003-optimize-cleanup-script/action-list-baseline.txt` from the current `cleanup_media.sh` run
+- [x] T002 [P] Capture baseline action list output in `specs/003-optimize-cleanup-script/action-list-baseline.txt` from the current `cleanup_media.sh` run
 
 ---
 
@@ -48,9 +48,9 @@ description: "Task list for Cleanup Script Optimization"
 ### Implementation for User Story 1
 
 - [x] T007 [US1] Add runtime timing capture in `cleanup_media.sh` for total run duration
-- [ ] T008 [US1] Consolidate repeated filesystem scans into single-pass operations in `cleanup_media.sh`
+- [x] T008 [US1] Consolidate repeated filesystem scans into single-pass operations in `cleanup_media.sh`
 - [x] T009 [US1] Reduce repeated parsing by caching derived values in `cleanup_media.sh`
-- [ ] T010 [US1] Record post-optimization timings in `specs/003-optimize-cleanup-script/benchmarks.md`
+- [x] T010 [US1] Record post-optimization timings in `specs/003-optimize-cleanup-script/benchmarks.md`
 
 **Checkpoint**: User Story 1 is complete and independently verifiable
 
@@ -64,8 +64,8 @@ description: "Task list for Cleanup Script Optimization"
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Centralize rule evaluation into a single code path in `cleanup_media.sh`
-- [ ] T012 [US2] Align per-type handling to shared helpers in `cleanup_media.sh` to eliminate inconsistent branching
+- [x] T011 [US2] Centralize rule evaluation into a single code path in `cleanup_media.sh`
+- [x] T012 [US2] Align per-type handling to shared helpers in `cleanup_media.sh` to eliminate inconsistent branching
 
 **Checkpoint**: User Story 2 is complete and independently verifiable
 
@@ -81,7 +81,7 @@ description: "Task list for Cleanup Script Optimization"
 
 - [x] T013 [US3] Add or update action list snapshot output in `cleanup_media.sh` for before/after comparisons
 - [x] T014 [US3] Document regression verification steps in `specs/003-optimize-cleanup-script/quickstart.md`
-- [ ] T015 [US3] Verify unchanged configuration compatibility in `specs/003-optimize-cleanup-script/benchmarks.md`
+- [x] T015 [US3] Verify unchanged configuration compatibility in `specs/003-optimize-cleanup-script/benchmarks.md`
 
 **Checkpoint**: User Story 3 is complete and independently verifiable
 
@@ -94,9 +94,9 @@ description: "Task list for Cleanup Script Optimization"
 - [x] T016 [P] Address `shellcheck` findings in `cleanup_media.sh`
 - [x] T017 [P] Address `markdownlint` findings in `specs/003-optimize-cleanup-script/spec.md` and `specs/003-optimize-cleanup-script/tasks.md`
 - [x] T018 [P] Update `README.md` if any flags, outputs, or behavior notes change
-- [ ] T019 [P] Run quickstart validation and record results in `specs/003-optimize-cleanup-script/benchmarks.md`
-- [ ] T020 [P] Record regression review summary for zero incorrect actions in `specs/003-optimize-cleanup-script/benchmarks.md`
-- [ ] T021 [P] Record validation feedback rate (target 95% no-regression) in `specs/003-optimize-cleanup-script/benchmarks.md`
+- [x] T019 [P] Run quickstart validation and record results in `specs/003-optimize-cleanup-script/benchmarks.md`
+- [x] T020 [P] Record regression review summary for zero incorrect actions in `specs/003-optimize-cleanup-script/benchmarks.md`
+- [x] T021 [P] Record validation feedback rate (target 95% no-regression) in `specs/003-optimize-cleanup-script/benchmarks.md`
 
 ---
 
