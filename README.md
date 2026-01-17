@@ -10,12 +10,16 @@ Scope:
 
 - Operates on the directories listed in `MEDIA_DIRS` (Google Drive/pCloud paths
   by default).
-- Moves files from nested subdirectories up to the directory root.
-- Removes empty directories after moves.
-- Deletes files whose extensions are not in `VIDEO_EXTENSIONS`.
-- Normalizes filenames by replacing non-alphanumeric characters with dots,
-  squeezing dots, capitalizing each dot-separated segment, and stripping
-  trailing non-year numbers.
+- Moves files from nested subdirectories up to the directory root, skipping
+  series folders marked with `.tvshow` or season subfolders.
+- Removes empty non-series directories after moves.
+- Normalizes filenames for allowed media/subtitle extensions by replacing
+  non-alphanumeric characters with dots, squeezing dots, capitalizing each
+  dot-separated segment, and stripping trailing non-year numbers.
+- Organizes episodes into `Series.Name/Sxx/` folders using the season token in
+  the filename and adds a `.tvshow` marker to series folders.
+- Leaves files without a recognized season token or with unsupported extensions
+  in the root for manual review.
 
 Usage:
 
@@ -25,10 +29,15 @@ Usage:
 
 Notes:
 
-- This script is destructive (moves and deletes files). Review `MEDIA_DIRS` and
+- This script moves and renames files. Review `MEDIA_DIRS` and
   `VIDEO_EXTENSIONS` before running.
 - The rename log lines look like `Renaming Old.Name.mkv to New.Name.mkv` and can
   be used by `rename.sh`.
+
+Performance notes:
+
+- Runtime depends on library size and disk performance. Record sample run
+  timing here once measured.
 
 ## rename.sh
 
