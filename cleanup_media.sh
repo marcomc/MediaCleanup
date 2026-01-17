@@ -14,7 +14,7 @@ MEDIA_DIRS=(
   "${PCLOUD_DIR}/TV Shows"
   # "${PCLOUD_DIR}/Movies"
 )
-VIDEO_EXTENSIONS=("mp4" "mkv" "avi" "mov" "flv" "wmv" "mpg" "mpeg" "webm" "m4v" "srt")
+VIDEO_EXTENSIONS=("mp4" "mkv" "avi" "mov" "flv" "wmv" "mpg" "mpeg" "webm" "m4v" "srt" "DS_Store")
 SERIES_MARKER=".tvshow"
 
 log_action() {
@@ -36,6 +36,24 @@ is_allowed_extension() {
     fi
   done
   return 1
+}
+
+remove_unwanted_files() {
+  local dir="$1"
+  local base_name
+  log_action "Removing unwanted files in: $(basename "${dir}")"
+
+  while IFS= read -r -d '' file; do
+    base_name=$(basename "${file}")
+    if [[ "${base_name}" == "${SERIES_MARKER}" ]]; then
+      continue
+    fi
+
+    if ! is_allowed_extension "${base_name}"; then
+      log_action "Removing file: ${file}"
+      rm "${file}"
+    fi
+  done < <(find "${dir}" -type f -print0)
 }
 
 is_series_root_dir() {
@@ -117,18 +135,12 @@ remove_empty_subdirs() {
   local dir="$1"
   log_action "Removing empty subdirectories in: $(basename "${dir}")"
 
-  while true; do
-    empty_dirs=$(find "${dir}" -mindepth 1 -type d -empty)
-    if [[ -z "${empty_dirs}" ]]; then
-      break
+  while IFS= read -r -d '' subdir; do
+    if [[ "${subdir}" != "${dir}" ]] && ! is_under_series_root "${subdir}"; then
+      log_action "Removing empty directory: ${subdir}"
+      rmdir "${subdir}"
     fi
-    echo "${empty_dirs}" | while IFS= read -r subdir; do
-      if [[ "${subdir}" != "${dir}" ]] && ! is_under_series_root "${subdir}"; then
-        log_action "Removing empty directory: ${subdir}"
-        rmdir "${subdir}"
-      fi
-    done
-  done
+  done < <(find "${dir}" -depth -mindepth 1 -type d -empty -print0)
 }
 
 normalize_filenames() {
@@ -252,5 +264,6 @@ for dir in "${MEDIA_DIRS[@]}"; do
   remove_empty_subdirs "${dir}"
   normalize_filenames "${dir}"
   organize_series_files "${dir}"
+  remove_unwanted_files "${dir}"
   remove_empty_subdirs "${dir}"
 done

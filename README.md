@@ -18,8 +18,8 @@ Scope:
   dot-separated segment, and stripping trailing non-year numbers.
 - Organizes episodes into `Series.Name/Sxx/` folders using the season token in
   the filename and adds a `.tvshow` marker to series folders.
-- Leaves files without a recognized season token or with unsupported extensions
-  in the root for manual review.
+- Deletes files with unsupported extensions.
+- Leaves files without a recognized season token in the root for manual review.
 
 Usage:
 
@@ -29,7 +29,7 @@ Usage:
 
 Notes:
 
-- This script moves and renames files. Review `MEDIA_DIRS` and
+- This script moves, renames, and deletes files. Review `MEDIA_DIRS` and
   `VIDEO_EXTENSIONS` before running.
 - The rename log lines look like `Renaming Old.Name.mkv to New.Name.mkv` and can
   be used by `rename.sh`.
