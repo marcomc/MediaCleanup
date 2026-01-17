@@ -466,8 +466,8 @@ organize_movie_series() {
   local temp_prefixes
 
   log_step "Organizing movie series"
-  temp_pairs="$(mktemp)"
-  temp_prefixes="$(mktemp)"
+  temp_pairs="$(mktemp -t mediacleanup.pairs.XXXXXX)"
+  temp_prefixes="$(mktemp -t mediacleanup.prefixes.XXXXXX)"
 
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
