@@ -24,7 +24,7 @@ implementation and testing of each story.
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Review and document folder organization behavior in README.md
+- [ ] T001 Update README.md with folder organization behavior and examples
 - [ ] T002 [P] Add season/series detection notes to cleanup_media.sh
 
 ---
@@ -43,6 +43,7 @@ can be implemented
   cleanup_media.sh
 - [ ] T007 Implement explicit handling for unparseable files in
   cleanup_media.sh
+- [ ] T008 Add logging for all move/rename/delete actions in cleanup_media.sh
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in
 parallel
@@ -59,9 +60,9 @@ folder and verify they land in `Series.Name/S07/`.
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Create series folder (if missing) in cleanup_media.sh
-- [ ] T009 [US1] Create season subfolder (if missing) in cleanup_media.sh
-- [ ] T010 [US1] Move eligible episode files to series/season folders in
+- [ ] T009 [US1] Create series folder (if missing) in cleanup_media.sh
+- [ ] T010 [US1] Create season subfolder (if missing) in cleanup_media.sh
+- [ ] T011 [US1] Move eligible episode files to series/season folders in
   cleanup_media.sh
 
 **Checkpoint**: User Story 1 should be fully functional and testable
@@ -79,9 +80,9 @@ flattened to the root, renamed, then organized.
 
 ### Implementation for User Story 2
 
-- [ ] T011 [US2] Move nested files to root before normalization in
+- [ ] T012 [US2] Move nested files to root before normalization in
   cleanup_media.sh
-- [ ] T012 [US2] Ensure normalization runs before series/season organization in
+- [ ] T013 [US2] Ensure normalization runs before series/season organization in
   cleanup_media.sh
 
 **Checkpoint**: User Story 2 should be fully functional and testable
@@ -99,9 +100,9 @@ confirm they are preserved during cleanup.
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Skip flattening directories containing `.tvshow` in
+- [ ] T014 [US3] Skip flattening directories containing `.tvshow` in
   cleanup_media.sh
-- [ ] T014 [US3] Ensure marker is created for new series folders in
+- [ ] T015 [US3] Ensure marker is created for new series folders in
   cleanup_media.sh
 
 **Checkpoint**: User Story 3 should be fully functional and testable
@@ -113,12 +114,9 @@ independently
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T015 [P] Add logging for all move/rename/delete actions in
-  cleanup_media.sh
-- [ ] T016 Update README.md with new folder structure examples
-- [ ] T017 [P] Run shellcheck on cleanup_media.sh (if available)
-- [ ] T018 [P] Run markdownlint on updated Markdown files
-- [ ] T019 [P] Validate runtime duration on a sample library and note results in
+- [ ] T016 [P] Run shellcheck on cleanup_media.sh (if available)
+- [ ] T017 [P] Run markdownlint on updated Markdown files
+- [ ] T018 [P] Validate runtime duration on a sample library and note results in
   README.md
 
 ---
@@ -149,9 +147,9 @@ independently
 
 ### Parallel Opportunities
 
-- T002, T015, T017, T018, and T019 can run in parallel with other tasks
-- T008 and T009 can run in parallel after parsing helpers are complete
-- T013 and T014 can run in parallel with other story tasks once markers exist
+- T002, T016, T017, and T018 can run in parallel with other tasks
+- T009 and T010 can run in parallel after parsing helpers are complete
+- T014 and T015 can run in parallel with other story tasks once markers exist
 
 ---
 
