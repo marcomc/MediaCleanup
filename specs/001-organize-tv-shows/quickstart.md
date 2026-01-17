@@ -10,8 +10,8 @@ into `Series.Name/Sxx/` folders with a `.tvshow` marker.
 
 ## Steps
 
-1. Review `MEDIA_DIRS` and `VIDEO_EXTENSIONS` in `cleanup_media.sh` to ensure
-   they match your storage locations and allowed file types.
+1. Review `MEDIA_DIRS` and `ALLOWED_FILE_EXT` in `~/.mediacleanup.conf` to
+   ensure they match your storage locations and allowed file types.
 2. Drop new files anywhere within the target media root; nested folders will be
    flattened to the root during cleanup.
 3. Run the cleanup script from the repository root:

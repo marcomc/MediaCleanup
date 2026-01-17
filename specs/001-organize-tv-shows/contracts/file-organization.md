@@ -7,7 +7,7 @@
 
 - Root media directories defined in `MEDIA_DIRS`
 - Episode files with normalized names containing a season token (e.g., `S07E10`)
-- Allowed media/subtitle extensions defined in `VIDEO_EXTENSIONS`
+- Allowed media/subtitle extensions defined in `ALLOWED_FILE_EXT`
 
 ## Outputs
 

@@ -9,7 +9,7 @@ those renames using the log output.
 Scope:
 
 - Operates on the directories listed in `MEDIA_DIRS` (Google Drive/pCloud paths
-  by default).
+  by default) or those loaded from `~/.mediacleanup.conf` if present.
 - Moves files from nested subdirectories up to the directory root, skipping
   series folders marked with `.tvshow` or season subfolders.
 - Removes empty non-series directories after moves.
@@ -18,7 +18,7 @@ Scope:
   dot-separated segment, and stripping trailing non-year numbers.
 - Organizes episodes into `Series.Name/Sxx/` folders using the season token in
   the filename and adds a `.tvshow` marker to series folders.
-- Deletes files with unsupported extensions.
+- Deletes files with unsupported extensions (based on `ALLOWED_FILE_EXT`).
 - Leaves files without a recognized season token in the root for manual review.
 
 Usage:
@@ -30,14 +30,17 @@ Usage:
 Notes:
 
 - This script moves, renames, and deletes files. Review `MEDIA_DIRS` and
-  `VIDEO_EXTENSIONS` before running.
+  `ALLOWED_FILE_EXT` before running.
+- If `~/.mediacleanup.conf` is missing, the script seeds it from
+  `mediacleanup.conf.sample` and exits so you can personalize it before
+  rerunning.
 - The rename log lines look like `Renaming Old.Name.mkv to New.Name.mkv` and can
   be used by `rename.sh`.
 
 Performance notes:
 
-- Runtime depends on library size and disk performance. Record sample run
-  timing here once measured.
+- Runtime depends on library size and disk performance. Sample run: 14.02s
+  (file count not captured).
 
 ## rename.sh
 

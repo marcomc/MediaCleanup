@@ -116,7 +116,7 @@ independently
 
 - [x] T016 [P] Run shellcheck on cleanup_media.sh (if available)
 - [x] T017 [P] Run markdownlint on updated Markdown files
-- [ ] T018 [P] Validate runtime duration on a sample library and note results in
+- [x] T018 [P] Validate runtime duration on a sample library and note results in
   README.md performance notes section
 
 ---

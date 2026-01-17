@@ -1,0 +1,22 @@
+# MediaCleanup configuration (sample)
+
+Copy to your home directory as `~/.mediacleanup.conf`.
+GOOGLE_ACCOUNT="<username>@gmail.com"
+MEDIA_DIRS=(
+  "/Users/${USER}/Library/CloudStorage/GoogleDrive-${GOOGLE_ACCOUNT}/My Drive/Media/TV Shows"
+  "/Users/${USER}/pCloud Drive/My Videos/TV Shows"
+)
+ALLOWED_FILE_EXT=(
+  "mp4"
+  "mkv"
+  "avi"
+  "mov"
+  "flv"
+  "wmv"
+  "mpg"
+  "mpeg"
+  "webm"
+  "m4v"
+  "srt"
+  "DS_Store"
+)

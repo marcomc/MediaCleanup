@@ -1,21 +1,27 @@
 #!/usr/bin/env bash
 USERNAME=$(whoami)
-GOOGLE_ACCOUNT="massaric@gmail.com"
-# shellcheck disable=SC2034 
-GOOGLE_DRIVE_DIR="/Users/${USERNAME}/Library/CloudStorage/GoogleDrive-${GOOGLE_ACCOUNT}/My Drive/Media"
-# shellcheck disable=SC2034
-BITPORT_SFTP_DIR="/Users/${USERNAME}/.CMVolumes/BitPort BETA"
-PCLOUD_DIR="/Users/${USERNAME}/pCloud Drive/My Videos"
-MEDIA_DIRS=(
-  "${GOOGLE_DRIVE_DIR}/TV Shows"
-  # "${GOOGLE_DRIVE_DIR}/Movies"
-  # "${BITPORT_SFTP_DIR}/TV Shows"
-  # "${BITPORT_SFTP_DIR}/Movies"
-  "${PCLOUD_DIR}/TV Shows"
-  # "${PCLOUD_DIR}/Movies"
-)
-VIDEO_EXTENSIONS=("mp4" "mkv" "avi" "mov" "flv" "wmv" "mpg" "mpeg" "webm" "m4v" "srt" "DS_Store")
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+  cat <<EOF
+Usage: $(basename "$0")
+
+Seeds config at: /Users/${USERNAME}/.mediacleanup.conf
+
+Description:
+  Organizes TV show media files based on ~/.mediacleanup.conf.
+
+Notes:
+  If ~/.mediacleanup.conf is missing, the script copies
+  mediacleanup.conf.sample and exits so you can personalize it.
+EOF
+  exit 0
+fi
+MEDIA_DIRS=()
+ALLOWED_FILE_EXT=()
 SERIES_MARKER=".tvshow"
+CONFIG_FILENAME=".mediacleanup.conf"
+SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SAMPLE_CONFIG_PATH="${SCRIPT_DIR}/mediacleanup.conf.sample"
+CONFIG_PATH="/Users/${USERNAME}/${CONFIG_FILENAME}"
 
 log_action() {
   echo "$1"
@@ -30,12 +36,46 @@ is_allowed_extension() {
   local ext="${filename##*.}"
   local ext_lc
   ext_lc="$(lowercase "$ext")"
-  for allowed in "${VIDEO_EXTENSIONS[@]}"; do
-    if [[ "$ext_lc" == "$allowed" ]]; then
+  for allowed in "${ALLOWED_FILE_EXT[@]}"; do
+    if [[ "$ext_lc" == "$(lowercase "$allowed")" ]]; then
       return 0
     fi
   done
   return 1
+}
+
+seed_config_if_missing() {
+  if [[ -f "${CONFIG_PATH}" ]]; then
+    return 0
+  fi
+
+  if [[ ! -f "${SAMPLE_CONFIG_PATH}" ]]; then
+    log_action "Missing sample config: ${SAMPLE_CONFIG_PATH}"
+    return 1
+  fi
+
+  log_action "Seeding config: ${CONFIG_PATH}"
+  cp "${SAMPLE_CONFIG_PATH}" "${CONFIG_PATH}"
+}
+
+load_first_config() {
+  if [[ -f "${CONFIG_PATH}" ]]; then
+    # shellcheck disable=SC1090
+    source "${CONFIG_PATH}"
+    return 0
+  fi
+  return 1
+}
+
+ensure_configs() {
+  local failures=0
+  if ! seed_config_if_missing; then
+    failures=$((failures + 1))
+  fi
+  if [[ "${failures}" -gt 0 ]]; then
+    return 1
+  fi
+  return 0
 }
 
 remove_unwanted_files() {
@@ -256,6 +296,18 @@ organize_series_files() {
     mv "${file}" "${dest}"
   done < <(find "${dir}" -maxdepth 1 -type f -print0)
 }
+
+if ! load_first_config; then
+  if seed_config_if_missing; then
+    log_action "Config seeded at ${CONFIG_PATH}. Update it before rerunning."
+  fi
+  exit 0
+fi
+
+if [[ "${#MEDIA_DIRS[@]}" -eq 0 || "${#ALLOWED_FILE_EXT[@]}" -eq 0 ]]; then
+  log_action "Config is missing MEDIA_DIRS or ALLOWED_FILE_EXT: ${CONFIG_PATH}"
+  exit 1
+fi
 
 # Loop through each directory and call the functions
 for dir in "${MEDIA_DIRS[@]}"; do
