@@ -31,14 +31,11 @@ fi
 COLOR_RESET=""
 COLOR_DIR=""
 COLOR_STEP=""
-COLOR_WARN=""
 if [[ "${USE_COLOR}" -eq 1 ]]; then
   COLOR_RESET="$(tput sgr0)"
   COLOR_DIR="$(tput setaf 4)"
   COLOR_STEP="$(tput setaf 2)"
-  COLOR_WARN="$(tput setaf 3)"
 fi
-CURRENT_DIR_PATH=""
 
 log_action() {
   echo "$1"
@@ -46,7 +43,6 @@ log_action() {
 
 log_dir_header() {
   local dir="$1"
-  CURRENT_DIR_PATH="${dir}"
   echo "${COLOR_DIR}== ${dir}${COLOR_RESET}"
 }
 
@@ -69,6 +65,14 @@ is_allowed_extension() {
     fi
   done
   return 1
+}
+
+should_process_allowed_file() {
+  local base_name="$1"
+  if [[ "${base_name}" == .* ]]; then
+    return 1
+  fi
+  is_allowed_extension "${base_name}"
 }
 
 seed_config_if_missing() {
@@ -297,11 +301,7 @@ normalize_filenames() {
       continue
     fi
 
-    if [[ "${base_name}" == .* ]]; then
-      continue
-    fi
-
-    if ! is_allowed_extension "${base_name}"; then
+    if ! should_process_allowed_file "${base_name}"; then
       continue
     fi
 
@@ -357,11 +357,7 @@ organize_series_files() {
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
 
-    if [[ "${base_name}" == .* ]]; then
-      continue
-    fi
-
-    if ! is_allowed_extension "${base_name}"; then
+    if ! should_process_allowed_file "${base_name}"; then
       continue
     fi
 
@@ -471,10 +467,7 @@ organize_movie_series() {
 
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
-    if [[ "${base_name}" == .* ]]; then
-      continue
-    fi
-    if ! is_allowed_extension "${base_name}"; then
+    if ! should_process_allowed_file "${base_name}"; then
       continue
     fi
     name_no_ext="${base_name%.*}"
