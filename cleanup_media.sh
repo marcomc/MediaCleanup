@@ -24,9 +24,34 @@ CONFIG_FILENAME=".mediacleanup.conf"
 SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SAMPLE_CONFIG_PATH="${SCRIPT_DIR}/mediacleanup.conf.sample"
 CONFIG_PATH="/Users/${USERNAME}/${CONFIG_FILENAME}"
+USE_COLOR=0
+if [[ -t 1 ]]; then
+  USE_COLOR=1
+fi
+COLOR_RESET=""
+COLOR_DIR=""
+COLOR_STEP=""
+COLOR_WARN=""
+if [[ "${USE_COLOR}" -eq 1 ]]; then
+  COLOR_RESET="$(tput sgr0)"
+  COLOR_DIR="$(tput setaf 4)"
+  COLOR_STEP="$(tput setaf 2)"
+  COLOR_WARN="$(tput setaf 3)"
+fi
+CURRENT_DIR_PATH=""
 
 log_action() {
   echo "$1"
+}
+
+log_dir_header() {
+  local dir="$1"
+  CURRENT_DIR_PATH="${dir}"
+  echo "${COLOR_DIR}== ${dir}${COLOR_RESET}"
+}
+
+log_step() {
+  log_action "${COLOR_STEP}${1}${COLOR_RESET}"
 }
 
 lowercase() {
@@ -83,7 +108,7 @@ ensure_configs() {
 remove_unwanted_files() {
   local dir="$1"
   local base_name
-  log_action "Removing unwanted files in: $(basename "${dir}")"
+  log_step "Removing unwanted files"
 
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
@@ -215,7 +240,7 @@ ensure_movie_marker() {
 }
 move_files_to_root() {
   local dir="$1"
-  log_action "Moving files in subdirectories of: $(basename "${dir}") to root"
+  log_step "Moving files from nested dirs to root"
   while IFS= read -r -d '' file; do
     if is_under_series_root "$file" || is_under_movie_root "$file"; then
       continue
@@ -237,7 +262,7 @@ move_files_to_root() {
 
 remove_empty_subdirs() {
   local dir="$1"
-  log_action "Removing empty subdirectories in: $(basename "${dir}")"
+  log_step "Removing empty subdirectories"
 
   while IFS= read -r -d '' subdir; do
     if [[ "${subdir}" == "${dir}" ]]; then
@@ -262,7 +287,7 @@ remove_empty_subdirs() {
 
 normalize_filenames() {
   local dir="$1"
-  log_action "Normalizing filenames in: $(basename "${dir}")"
+  log_step "Normalizing filenames"
   while IFS= read -r -d '' file; do
     dir_name=$(dirname "${file}")
     base_name=$(basename "${file}")
@@ -328,7 +353,7 @@ organize_series_files() {
   local series_root
   local dest
 
-  log_action "Organizing episode files in: $(basename "${dir}")"
+  log_step "Organizing episode files"
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
 
@@ -440,7 +465,7 @@ organize_movie_series() {
   local temp_pairs
   local temp_prefixes
 
-  log_action "Organizing movie series in: $(basename "${dir}")"
+  log_step "Organizing movie series"
   temp_pairs="$(mktemp)"
   temp_prefixes="$(mktemp)"
 
@@ -501,6 +526,7 @@ fi
 
 # Loop through each directory and call the functions
 for dir in "${MEDIA_DIRS[@]}"; do
+  log_dir_header "${dir}"
   build_series_roots "${dir}"
   build_movie_roots "${dir}"
   move_files_to_root "${dir}"
