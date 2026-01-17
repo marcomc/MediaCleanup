@@ -12,7 +12,7 @@
 ### Session 2026-01-17
 
 - Q: When should movie series grouping occur? → A: Group any prefix shared by
-  two or more movies.
+  two or more matching files (including companion subtitles).
 - Q: Which marker should identify movie series folders? → A: Use `.movieseries`.
 - Q: How should the movie series folder name be derived? → A: Use the full
   prefix before the first numeric suffix or Roman numeral.
@@ -85,7 +85,7 @@ matching movies to the root, and confirm they are moved into the existing folder
 - A movie title contains a year token (e.g., `Movie.Title.2019`) and should
   still be treated as standalone unless it matches a series prefix rule.
 - A single movie with a prefix should not be grouped into a series folder unless
-  multiple matching movies exist.
+  multiple matching files exist (including companion subtitles).
 - Movie files that look like TV episodes (contain SxxExx) are still treated as
   TV shows, not movie series.
 
@@ -95,9 +95,10 @@ matching movies to the root, and confirm they are moved into the existing folder
 
 - **FR-001**: The system MUST leave standalone movie files in the root
   directory.
-- **FR-002**: The system MUST detect movie series by identifying multiple movie
-  files sharing a common prefix in the root (two or more matches), unless a
-  matching `.movieseries` folder already exists.
+- **FR-002**: The system MUST detect movie series by identifying multiple
+  matching files (including companion subtitles) sharing a common prefix in the
+  root (two or more matches), unless a matching `.movieseries` folder already
+  exists.
 - **FR-003**: The system MUST group matching movie series files into a folder
   named after the full prefix before the first numeric suffix or Roman numeral.
 - **FR-004**: The system MUST create a `.movieseries` marker file inside movie
@@ -117,8 +118,8 @@ matching movies to the root, and confirm they are moved into the existing folder
 
 - A movie series is determined by a shared filename prefix before a numeric
   suffix or trailing token.
-- Only when multiple movies share the same prefix should a series folder be
-  created.
+- Series grouping can be triggered by a matching movie plus its companion
+  subtitle file.
 
 ## Success Criteria *(mandatory)*
 

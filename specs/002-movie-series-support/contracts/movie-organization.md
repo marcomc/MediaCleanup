@@ -17,7 +17,7 @@
 
 ## Rules
 
-- Group movies when two or more share a prefix, unless a matching
-  `.movieseries` folder already exists.
+- Group matching files (including companion subtitles) when two or more share a
+  prefix, unless a matching `.movieseries` folder already exists.
 - Folder name is the prefix before the first numeric suffix or Roman numeral.
 - TV episode rules take precedence when SxxExx tokens are present.
