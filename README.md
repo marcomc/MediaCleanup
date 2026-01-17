@@ -18,6 +18,8 @@ Scope:
   dot-separated segment, and stripping trailing non-year numbers.
 - Organizes episodes into `Series.Name/Sxx/` folders using the season token in
   the filename and adds a `.tvshow` marker to series folders.
+- Groups movie series into prefix folders with a `.movieseries` marker when
+  multiple movies share the same prefix; standalone movies stay in the root.
 - Deletes files with unsupported extensions (based on `ALLOWED_FILE_EXT`).
 - Leaves files without a recognized season token in the root for manual review.
 
