@@ -82,7 +82,6 @@ specs/002-movie-series-support/
 ```text
 .
 ├── cleanup_media.sh
-├── rename.sh
 └── README.md
 ```
 

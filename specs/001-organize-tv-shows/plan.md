@@ -82,7 +82,6 @@ specs/001-organize-tv-shows/
 ```text
 .
 ├── cleanup_media.sh
-├── rename.sh
 └── README.md
 ```
 

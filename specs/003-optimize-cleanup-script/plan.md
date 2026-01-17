@@ -52,7 +52,6 @@ specs/003-optimize-cleanup-script/
 
 ```text
 cleanup_media.sh
-rename.sh
 mediacleanup.conf.sample
 README.md
 ```
