@@ -24,7 +24,7 @@ implementation and testing of each story.
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Update README.md with folder organization behavior and examples
+- [ ] T001 Update README.md with folder organization behavior and naming rules
 - [ ] T002 [P] Add season/series detection notes to cleanup_media.sh
 
 ---
@@ -117,7 +117,7 @@ independently
 - [ ] T016 [P] Run shellcheck on cleanup_media.sh (if available)
 - [ ] T017 [P] Run markdownlint on updated Markdown files
 - [ ] T018 [P] Validate runtime duration on a sample library and note results in
-  README.md
+  README.md performance notes section
 
 ---
 
