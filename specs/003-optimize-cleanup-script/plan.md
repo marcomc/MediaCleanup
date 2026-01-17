@@ -12,12 +12,17 @@ Optimize the cleanup script by removing duplicated logic and improving runtime w
 **Language/Version**: Bash (macOS system bash)  
 **Primary Dependencies**: Standard macOS shell tools (find, mv, rm, awk, sed, tr)  
 **Storage**: Local filesystem under configured media directories  
-**Testing**: Manual regression comparison on a representative dataset; run `shellcheck` when available  
+**Testing**: Manual regression comparison on a representative dataset; run `shellcheck` and `markdownlint` when available  
 **Target Platform**: macOS  
 **Project Type**: Single script repository  
 **Performance Goals**: At least 25% faster cleanup runtime on the reference dataset, using percentage-only targets  
-**Constraints**: Preserve cleanup rules and configuration behavior; deterministic and idempotent action lists; log all destructive actions before execution; no external dependencies  
+**Constraints**: Preserve cleanup rules and configuration behavior; deterministic and idempotent action lists; log all destructive actions before execution; reject ambiguous/root paths; no external dependencies  
 **Scale/Scope**: Representative dataset (no fixed size), may include large libraries (100k+ files) and mixed media types
+
+## Risk Notes
+
+- Performance regressions could surface on very large libraries; track runtime and action counts before/after changes.
+- Path guards must be preserved during refactors to avoid accidental root/ambiguous path operations.
 
 ## Constitution Check
 
@@ -52,7 +57,7 @@ mediacleanup.conf.sample
 README.md
 ```
 
-**Structure Decision**: Single script repository with root-level shell scripts; optimization work centers on `cleanup_media.sh` and shared helper logic.
+**Structure Decision**: Single script repository with root-level shell scripts; optimization work centers on `cleanup_media.sh` and shared helper logic. Validation artifacts live in `specs/003-optimize-cleanup-script/benchmarks.md` and `specs/003-optimize-cleanup-script/action-list-baseline.txt`.
 
 ## Complexity Tracking
 

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD013 -->
 # Feature Specification: Cleanup Script Optimization
 
 **Feature Branch**: `003-optimize-cleanup-script`  
@@ -62,9 +63,9 @@ As a user, I want the optimized cleanup to preserve existing outcomes so I do no
 
 ### Edge Cases
 
-- What happens when the media directory contains a very large number of files (e.g., 100,000+) ?
-- How does the system handle files with unusual or inconsistent naming formats?
-- What happens when the cleanup run is interrupted and restarted?
+- When the media directory contains a very large number of files (e.g., 100,000+), cleanup completes without errors and logs total runtime and action counts.
+- Files with unusual or inconsistent naming formats are left unchanged and logged as skipped with a clear reason.
+- If a cleanup run is interrupted and restarted, reruns remain deterministic and do not introduce new actions beyond the pre-execution action list.
 
 ## Requirements *(mandatory)*
 
@@ -77,6 +78,9 @@ As a user, I want the optimized cleanup to preserve existing outcomes so I do no
 - **FR-006**: System MUST preserve existing cleanup rules and configuration behavior; changes are limited to refactoring and performance improvements.
 - **FR-005**: System MUST provide deterministic results for repeated runs on an unchanged dataset.
 - **FR-007**: System MUST preserve pre-execution action list equivalence across mixed media types in a representative dataset.
+- **FR-008**: System MUST log each planned move, rename, or delete before execution with enough detail to reverse it.
+- **FR-009**: System MUST restrict actions to configured media roots and reject ambiguous or root-level paths.
+- **FR-010**: System MUST provide a pre-execution action list output suitable for comparison between runs.
 
 ### Key Entities *(include if feature involves data)*
 

@@ -10,6 +10,12 @@
 2. Run cleanup to capture the pre-execution action list baseline.
 3. Run cleanup again after optimization and compare action lists for equivalence.
 
+### Action List Comparison Checklist
+- Action list files are captured from two runs with the same dataset snapshot.
+- The action list entries match in count and order.
+- No unexpected action types appear in the optimized run.
+- Mixed media types (movies, TV, other) are represented in the comparison set.
+
 ## Validate Performance
 1. Measure total runtime for the baseline run on the representative dataset.
 2. Measure total runtime after optimization.
