@@ -1,8 +1,7 @@
 # MediaCleanup
 
-Two small Bash utilities for organizing media files. `cleanup_media.sh`
-normalizes a media library and produces rename logs. `rename.sh` can revert
-those renames using the log output.
+Single Bash utility for organizing media files. `cleanup_media.sh`
+normalizes a media library and produces action logs.
 
 ## cleanup_media.sh
 
@@ -36,29 +35,13 @@ Notes:
 - If `~/.mediacleanup.conf` is missing, the script seeds it from
   `mediacleanup.conf.sample` and exits so you can personalize it before
   rerunning.
-- The rename log lines look like `Renaming Old.Name.mkv to New.Name.mkv` and can
-  be used by `rename.sh`.
+- The script emits pre-execution action logs for moves, renames, deletes, and
+  empty directory removals in the format `ACTION SOURCE -> DEST` to stdout.
+- A structured action list is written to `/tmp/mediacleanup/action-list-<timestamp>.txt`
+  with tab-separated fields: `ACTION<TAB>SOURCE<TAB>DEST`. This file can be used
+  to compare runs or drive reversibility tooling.
 
 Performance notes:
 
 - Runtime depends on library size and disk performance. Sample run: 14.02s
   (file count not captured).
-
-## rename.sh
-
-Scope:
-
-- Reads a log file containing lines like `Renaming <old> to <new>`.
-- Attempts to rename `<new>` back to `<old>` for each line.
-
-Usage:
-
-```bash
-./rename.sh /path/to/rename.log
-```
-
-Notes:
-
-- The log entries from `cleanup_media.sh` only include base names, not full
-  paths. Run `rename.sh` in the directory where the files live or adjust the log
-  to include paths.

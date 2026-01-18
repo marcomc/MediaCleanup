@@ -1,0 +1,85 @@
+openapi: 3.0.3
+info:
+  title: Cleanup Run Contract
+  version: 1.0.0
+  description: Logical contract for cleanup run planning and action list output.
+paths:
+  /cleanup/runs:
+    post:
+      summary: Create a cleanup run plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CleanupRunRequest"
+      responses:
+        "201":
+          description: Cleanup run plan created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CleanupRun"
+  /cleanup/runs/{runId}/actions:
+    get:
+      summary: Retrieve the pre-execution action list
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Action list for the cleanup run
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CleanupAction"
+components:
+  schemas:
+    CleanupRunRequest:
+      type: object
+      properties:
+        datasetLabel:
+          type: string
+        mediaRoots:
+          type: array
+          items:
+            type: string
+      required:
+        - mediaRoots
+    CleanupRun:
+      type: object
+      properties:
+        runId:
+          type: string
+        datasetLabel:
+          type: string
+        actionCount:
+          type: integer
+      required:
+        - runId
+        - actionCount
+    CleanupAction:
+      type: object
+      properties:
+        actionType:
+          type: string
+          enum:
+            - move
+            - rename
+            - delete
+        sourcePath:
+          type: string
+        targetPath:
+          type: string
+        reason:
+          type: string
+        reversible:
+          type: boolean
+      required:
+        - actionType
+        - sourcePath

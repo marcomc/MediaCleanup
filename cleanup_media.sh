@@ -17,6 +17,7 @@ EOF
 fi
 MEDIA_DIRS=()
 ALLOWED_FILE_EXT=()
+ALLOWED_FILE_EXT_LC=()
 SERIES_MARKER=".tvshow"
 # Marker for grouped movie series folders.
 MOVIE_MARKER=".movieseries"
@@ -36,6 +37,9 @@ if [[ "${USE_COLOR}" -eq 1 ]]; then
   COLOR_DIR="$(tput setaf 4)"
   COLOR_STEP="$(tput setaf 2)"
 fi
+RUN_ID="$(date +%Y%m%d%H%M%S)"
+ACTION_LOG_DIR="/tmp/mediacleanup"
+ACTION_LIST_FILE="${ACTION_LOG_DIR}/action-list-${RUN_ID}.txt"
 
 log_action() {
   echo "$1"
@@ -54,13 +58,95 @@ lowercase() {
   echo "$1" | tr '[:upper:]' '[:lower:]'
 }
 
+find_root_files() {
+  local dir="$1"
+  find "${dir}" -maxdepth 1 -type f -print0
+}
+
+find_nested_files() {
+  local dir="$1"
+  find "${dir}" -mindepth 2 -type f -print0
+}
+
+find_all_files() {
+  local dir="$1"
+  find "${dir}" -type f -print0
+}
+
+init_action_logging() {
+  mkdir -p "${ACTION_LOG_DIR}"
+  : > "${ACTION_LIST_FILE}"
+}
+
+prune_action_logs() {
+  local keep=5
+  local count=0
+  local file
+
+  for file in "${ACTION_LOG_DIR}"/action-list-*.txt; do
+    [[ -e "${file}" ]] || return 0
+    break
+  done
+
+  for file in $(ls -1t "${ACTION_LOG_DIR}"/action-list-*.txt 2>/dev/null); do
+    count=$((count + 1))
+    if [[ "${count}" -gt "${keep}" ]]; then
+      rm -f "${file}"
+    fi
+  done
+}
+record_action() {
+  local action="$1"
+  local source="$2"
+  local dest="$3"
+  printf '%s\t%s\t%s\n' "${action}" "${source}" "${dest}" >> "${ACTION_LIST_FILE}"
+}
+
+plan_move() {
+  local source="$1"
+  local dest="$2"
+  log_action "Moving file: ${source} -> ${dest}"
+  record_action "MOVE" "${source}" "${dest}"
+  mv "${source}" "${dest}"
+}
+
+plan_rename() {
+  local source="$1"
+  local dest="$2"
+  log_action "Renaming file: ${source} -> ${dest}"
+  record_action "RENAME" "${source}" "${dest}"
+  mv "${source}" "${dest}"
+}
+
+plan_remove() {
+  local target="$1"
+  log_action "Removing file: ${target}"
+  record_action "DELETE" "${target}" ""
+  rm "${target}"
+}
+
+plan_remove_dir() {
+  local target="$1"
+  log_action "Removing empty directory: ${target}"
+  record_action "RMDIR" "${target}" ""
+  rmdir "${target}"
+}
+
+build_allowed_extensions() {
+  local ext
+  ALLOWED_FILE_EXT_LC=()
+  for ext in "${ALLOWED_FILE_EXT[@]}"; do
+    ALLOWED_FILE_EXT_LC+=("$(lowercase "${ext}")")
+  done
+}
+
 is_allowed_extension() {
   local filename="$1"
   local ext="${filename##*.}"
   local ext_lc
   ext_lc="$(lowercase "$ext")"
-  for allowed in "${ALLOWED_FILE_EXT[@]}"; do
-    if [[ "$ext_lc" == "$(lowercase "$allowed")" ]]; then
+  for allowed in "${ALLOWED_FILE_EXT_LC[@]}"; do
+    if [[ "$ext_lc" == "$allowed" ]]; then
       return 0
     fi
   done
@@ -109,6 +195,21 @@ ensure_configs() {
   return 0
 }
 
+validate_media_dirs() {
+  local dir
+  for dir in "${MEDIA_DIRS[@]}"; do
+    if [[ -z "${dir}" || "${dir}" == "/" || "${dir}" == "." || "${dir}" == ".." ]]; then
+      log_action "Invalid media directory path: ${dir}"
+      return 1
+    fi
+    if [[ "${dir}" != /* ]]; then
+      log_action "Media directory must be an absolute path: ${dir}"
+      return 1
+    fi
+  done
+  return 0
+}
+
 remove_unwanted_files() {
   local dir="$1"
   local base_name
@@ -121,10 +222,9 @@ remove_unwanted_files() {
     fi
 
     if ! is_allowed_extension "${base_name}"; then
-      log_action "Removing file: ${file}"
-      rm "${file}"
+      plan_remove "${file}"
     fi
-  done < <(find "${dir}" -type f -print0)
+  done < <(find_all_files "${dir}")
 }
 
 is_series_root_dir() {
@@ -250,8 +350,7 @@ move_files_to_root() {
       continue
     fi
     if [[ "$(basename "$file")" == ".DS_Store" ]]; then
-      log_action "Removing file: ${file}"
-      rm "$file"
+      plan_remove "${file}"
       continue
     fi
     dest="${dir}/$(basename "$file")"
@@ -259,9 +358,8 @@ move_files_to_root() {
       log_action "Skipping existing file: ${dest}"
       continue
     fi
-    log_action "Moving file to: ${dest}"
-    mv "$file" "$dest"
-  done < <(find "${dir}" -mindepth 2 -type f -print0)
+    plan_move "${file}" "${dest}"
+  done < <(find_nested_files "${dir}")
 }
 
 remove_empty_subdirs() {
@@ -277,15 +375,12 @@ remove_empty_subdirs() {
     fi
     if ! find "${subdir}" -maxdepth 1 -type f ! -name ".DS_Store" -print -quit | grep -q .; then
       if [[ -f "${subdir}/.DS_Store" ]]; then
-        log_action "Removing file: ${subdir}/.DS_Store"
-        rm "${subdir}/.DS_Store"
+        plan_remove "${subdir}/.DS_Store"
       fi
-      log_action "Removing empty directory: ${subdir}"
-      rmdir "${subdir}"
+      plan_remove_dir "${subdir}"
       continue
     fi
-    log_action "Removing empty directory: ${subdir}"
-    rmdir "${subdir}"
+    plan_remove_dir "${subdir}"
   done < <(find "${dir}" -depth -mindepth 1 -type d -empty -print0)
 }
 
@@ -336,10 +431,9 @@ normalize_filenames() {
     
     # If the new filename is different from the original, rename the file
     if [[ "${base_name}" != "${new_name}" ]]; then
-      log_action "Renaming ${base_name} to ${new_name}"
-      mv "${file}" "${dir_name}/${new_name}"
+      plan_rename "${file}" "${dir_name}/${new_name}"
     fi
-  done < <(find "${dir}" -maxdepth 1 -type f -print0)
+  done < <(find_root_files "${dir}")
 }
 
 organize_series_files() {
@@ -390,9 +484,8 @@ organize_series_files() {
       continue
     fi
 
-    log_action "Moving file to: ${dest}"
-    mv "${file}" "${dest}"
-  done < <(find "${dir}" -maxdepth 1 -type f -print0)
+    plan_move "${file}" "${dest}"
+  done < <(find_root_files "${dir}")
 }
 
 is_tv_episode_name() {
@@ -473,7 +566,7 @@ organize_movie_series() {
     name_no_ext="${base_name%.*}"
     prefix="$(get_movie_prefix "${name_no_ext}")" || continue
     printf '%s\t%s\n' "${prefix}" "${file}" >> "${temp_pairs}"
-  done < <(find "${dir}" -maxdepth 1 -type f -print0)
+  done < <(find_root_files "${dir}")
 
   if [[ -s "${temp_pairs}" ]]; then
     awk -F '\t' '{count[$1]++} END {for (p in count) if (count[p] >= 2) print p}' \
@@ -497,12 +590,28 @@ organize_movie_series() {
         log_action "Skipping existing file: ${dest}"
         continue
       fi
-      log_action "Moving file to: ${dest}"
-      mv "${file}" "${dest}"
+      plan_move "${file}" "${dest}"
     fi
   done < "${temp_pairs}"
 
   rm -f "${temp_pairs}" "${temp_prefixes}"
+}
+
+run_cleanup_steps() {
+  local dir="$1"
+  local steps=(
+    move_files_to_root
+    normalize_filenames
+    organize_series_files
+    organize_movie_series
+    remove_unwanted_files
+    remove_empty_subdirs
+  )
+
+  local step
+  for step in "${steps[@]}"; do
+    "${step}" "${dir}"
+  done
 }
 
 if ! load_first_config; then
@@ -516,17 +625,21 @@ if [[ "${#MEDIA_DIRS[@]}" -eq 0 || "${#ALLOWED_FILE_EXT[@]}" -eq 0 ]]; then
   log_action "Config is missing MEDIA_DIRS or ALLOWED_FILE_EXT: ${CONFIG_PATH}"
   exit 1
 fi
+if ! validate_media_dirs; then
+  exit 1
+fi
+build_allowed_extensions
+init_action_logging
 
+# Track total runtime for the cleanup run.
+SECONDS=0
 # Loop through each directory and call the functions
 for dir in "${MEDIA_DIRS[@]}"; do
   log_dir_header "${dir}"
   build_series_roots "${dir}"
   build_movie_roots "${dir}"
-  move_files_to_root "${dir}"
-  remove_empty_subdirs "${dir}"
-  normalize_filenames "${dir}"
-  organize_series_files "${dir}"
-  organize_movie_series "${dir}"
-  remove_unwanted_files "${dir}"
-  remove_empty_subdirs "${dir}"
+  run_cleanup_steps "${dir}"
 done
+log_step "Cleanup complete in ${SECONDS}s"
+log_step "Action list recorded at ${ACTION_LIST_FILE}"
+prune_action_logs
