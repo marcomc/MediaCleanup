@@ -26,6 +26,7 @@ Usage:
 
 ```bash
 ./cleanup_media.sh
+./cleanup_media.sh --help # for usage details
 ```
 
 Notes:
