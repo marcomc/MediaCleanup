@@ -389,7 +389,10 @@ virtual_dir_has_season_subdir() {
 file_exists_any() {
   local path="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    virtual_file_exists "${path}"
+    if virtual_file_exists "${path}"; then
+      return 0
+    fi
+    virtual_dir_exists "${path}"
     return $?
   fi
   [[ -e "${path}" ]]
