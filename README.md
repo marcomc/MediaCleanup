@@ -26,8 +26,17 @@ Usage:
 
 ```bash
 ./cleanup_media.sh
+./cleanup_media.sh --log-level WARN
+./cleanup_media.sh --dry-run
+./cleanup_media.sh --apply
 ./cleanup_media.sh --help # for usage details
 ```
+
+Options:
+
+- `--log-level LEVEL`: `ERROR`, `WARN`, `INFO`, or `DEBUG` (default: `INFO`)
+- `--dry-run`: simulate actions (default)
+- `--apply`: perform actions
 
 Notes:
 
@@ -36,8 +45,10 @@ Notes:
 - If `~/.mediacleanup.conf` is missing, the script seeds it from
   `mediacleanup.conf.sample` and exits so you can personalize it before
   rerunning.
+- Screen output omits the media root prefix by default; `--log-level DEBUG`
+  shows full paths. INFO-level lines do not include a `[INFO]` prefix.
 - The script emits pre-execution action logs for moves, renames, deletes, and
-  empty directory removals in the format `ACTION SOURCE -> DEST` to stdout.
+  empty directory removals to stdout.
 - A structured action list is written to `/tmp/mediacleanup/action-list-<timestamp>.txt`
   with tab-separated fields: `ACTION<TAB>SOURCE<TAB>DEST`. This file can be used
   to compare runs or drive reversibility tooling.

@@ -95,16 +95,18 @@ parse_args() {
 }
 
 log_action() {
-  echo "$1"
+  log_message "INFO" "$1"
 }
 
 log_dir_header() {
   local dir="$1"
-  echo "${COLOR_DIR}== ${dir}${COLOR_RESET}"
+  local display_dir
+  display_dir="$(format_media_path "${dir}")"
+  log_message "INFO" "${COLOR_DIR}== ${display_dir}${COLOR_RESET}"
 }
 
 log_step() {
-  log_action "${COLOR_STEP}${1}${COLOR_RESET}"
+  log_message "INFO" "${COLOR_STEP}${1}${COLOR_RESET}"
 }
 
 lowercase() {
@@ -135,13 +137,44 @@ prune_action_logs() {
   local keep=5
   local count=0
   local file
+  local files=()
+  local sorted=()
+  local tmp_list
+  local tmp_sorted
+  local tmp_stat
 
-  for file in "${ACTION_LOG_DIR}"/action-list-*.txt; do
-    [[ -e "${file}" ]] || return 0
-    break
-  done
+  tmp_list="$(mktemp -t mediacleanup.logs.XXXXXX)"
+  if ! find "${ACTION_LOG_DIR}" -maxdepth 1 -type f -name 'action-list-*.txt' -print0 > "${tmp_list}"; then
+    rm -f "${tmp_list}"
+    return 1
+  fi
 
-  for file in $(ls -1t "${ACTION_LOG_DIR}"/action-list-*.txt 2>/dev/null); do
+  while IFS= read -r -d '' file; do
+    files+=("${file}")
+  done < "${tmp_list}"
+  rm -f "${tmp_list}"
+
+  if [[ "${#files[@]}" -eq 0 ]]; then
+    return 0
+  fi
+
+  tmp_sorted="$(mktemp -t mediacleanup.sorted.XXXXXX)"
+  tmp_stat="$(mktemp -t mediacleanup.stat.XXXXXX)"
+  if ! stat -f "%m %N" "${files[@]}" > "${tmp_stat}"; then
+    rm -f "${tmp_sorted}" "${tmp_stat}"
+    return 1
+  fi
+  if ! sort -rn "${tmp_stat}" > "${tmp_sorted}"; then
+    rm -f "${tmp_sorted}" "${tmp_stat}"
+    return 1
+  fi
+
+  while IFS= read -r file; do
+    sorted+=("${file#* }")
+  done < "${tmp_sorted}"
+  rm -f "${tmp_sorted}" "${tmp_stat}"
+
+  for file in "${sorted[@]}"; do
     count=$((count + 1))
     if [[ "${count}" -gt "${keep}" ]]; then
       rm -f "${file}"
@@ -166,6 +199,7 @@ record_action_counts() {
     RMDIR) ACTION_COUNT_RMDIR=$((ACTION_COUNT_RMDIR + 1)) ;;
     MKDIR) ACTION_COUNT_MKDIR=$((ACTION_COUNT_MKDIR + 1)) ;;
     TOUCH) ACTION_COUNT_TOUCH=$((ACTION_COUNT_TOUCH + 1)) ;;
+    *) ;;
   esac
 
   case "${outcome}" in
@@ -173,32 +207,114 @@ record_action_counts() {
     simulated) OUTCOME_SIMULATED=$((OUTCOME_SIMULATED + 1)) ;;
     skipped) OUTCOME_SKIPPED=$((OUTCOME_SKIPPED + 1)) ;;
     failed) OUTCOME_FAILED=$((OUTCOME_FAILED + 1)) ;;
+    *) ;;
   esac
 }
 
+log_level_num() {
+  case "$1" in
+    ERROR) echo 0 ;;
+    WARN) echo 1 ;;
+    INFO) echo 2 ;;
+    DEBUG) echo 3 ;;
+    *) echo 99 ;;
+  esac
+}
+
+normalize_log_level() {
+  LOG_LEVEL="$(echo "${LOG_LEVEL}" | tr '[:lower:]' '[:upper:]')"
+}
+
+is_log_level_enabled() {
+  local level="$1"
+  local level_num
+  local threshold
+
+  level_num="$(log_level_num "${level}")"
+  threshold="$(log_level_num "${LOG_LEVEL}")"
+  [[ "${level_num}" -le "${threshold}" ]]
+}
+
+log_message() {
+  local level="$1"
+  shift
+  if ! is_log_level_enabled "${level}"; then
+    return 0
+  fi
+  if [[ "${LOG_LEVEL}" == "INFO" && "${level}" == "INFO" ]]; then
+    echo "$*"
+    return 0
+  fi
+  echo "[${level}] $*"
+}
+
+log_warn() {
+  log_message "WARN" "$1"
+}
+
+log_error() {
+  log_message "ERROR" "$1"
+}
+
+log_debug() {
+  log_message "DEBUG" "$1"
+}
+
 validate_log_level() {
+  normalize_log_level
   case "${LOG_LEVEL}" in
     ERROR|WARN|INFO|DEBUG) return 0 ;;
+    *) ;;
   esac
-  log_action "Invalid log level: ${LOG_LEVEL}"
+  echo "Invalid log level: ${LOG_LEVEL}" >&2
   return 1
+}
+
+format_media_path() {
+  local path="$1"
+  local root
+  local rel
+
+  if [[ "${LOG_LEVEL}" == "DEBUG" ]]; then
+    echo "${path}"
+    return 0
+  fi
+
+  for root in "${MEDIA_DIRS[@]}"; do
+    if [[ "${path}" == "${root}" ]]; then
+      basename "${root}"
+      return 0
+    fi
+    if [[ "${path}" == "${root}/"* ]]; then
+      rel="${path#"${root}"/}"
+      echo "${rel}"
+      return 0
+    fi
+  done
+
+  echo "${path}"
 }
 
 plan_move() {
   local source="$1"
   local dest="$2"
+  local source_display
+  local dest_display
+
+  source_display="$(format_media_path "${source}")"
+  dest_display="$(format_media_path "${dest}")"
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating move: ${source} -> ${dest}"
+    log_action "Simulating move: ${source_display} -> ${dest_display}"
     record_action_list "MOVE" "${source}" "${dest}"
     record_action_counts "MOVE" "simulated"
     return 0
   fi
-  log_action "Moving file: ${source} -> ${dest}"
+  log_action "Moving file: ${source_display} -> ${dest_display}"
   record_action_list "MOVE" "${source}" "${dest}"
   if mv "${source}" "${dest}"; then
     record_action_counts "MOVE" "performed"
   else
-    log_action "Failed to move: ${source} -> ${dest}"
+    log_error "Failed to move: ${source_display} -> ${dest_display}"
     record_action_counts "MOVE" "failed"
     return 1
   fi
@@ -207,18 +323,23 @@ plan_move() {
 plan_rename() {
   local source="$1"
   local dest="$2"
+  local source_display
+  local dest_display
+
+  source_display="$(format_media_path "${source}")"
+  dest_display="$(format_media_path "${dest}")"
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating rename: ${source} -> ${dest}"
+    log_action "Simulating rename: ${source_display} -> ${dest_display}"
     record_action_list "RENAME" "${source}" "${dest}"
     record_action_counts "RENAME" "simulated"
     return 0
   fi
-  log_action "Renaming file: ${source} -> ${dest}"
+  log_action "Renaming file: ${source_display} -> ${dest_display}"
   record_action_list "RENAME" "${source}" "${dest}"
   if mv "${source}" "${dest}"; then
     record_action_counts "RENAME" "performed"
   else
-    log_action "Failed to rename: ${source} -> ${dest}"
+    log_error "Failed to rename: ${source_display} -> ${dest_display}"
     record_action_counts "RENAME" "failed"
     return 1
   fi
@@ -226,18 +347,21 @@ plan_rename() {
 
 plan_remove() {
   local target="$1"
+  local target_display
+
+  target_display="$(format_media_path "${target}")"
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating delete: ${target}"
+    log_action "Simulating delete: ${target_display}"
     record_action_list "DELETE" "${target}" ""
     record_action_counts "DELETE" "simulated"
     return 0
   fi
-  log_action "Removing file: ${target}"
+  log_action "Removing file: ${target_display}"
   record_action_list "DELETE" "${target}" ""
   if rm "${target}"; then
     record_action_counts "DELETE" "performed"
   else
-    log_action "Failed to delete: ${target}"
+    log_error "Failed to delete: ${target_display}"
     record_action_counts "DELETE" "failed"
     return 1
   fi
@@ -245,18 +369,21 @@ plan_remove() {
 
 plan_remove_dir() {
   local target="$1"
+  local target_display
+
+  target_display="$(format_media_path "${target}")"
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating rmdir: ${target}"
+    log_action "Simulating rmdir: ${target_display}"
     record_action_list "RMDIR" "${target}" ""
     record_action_counts "RMDIR" "simulated"
     return 0
   fi
-  log_action "Removing empty directory: ${target}"
+  log_action "Removing empty directory: ${target_display}"
   record_action_list "RMDIR" "${target}" ""
   if rmdir "${target}"; then
     record_action_counts "RMDIR" "performed"
   else
-    log_action "Failed to remove directory: ${target}"
+    log_error "Failed to remove directory: ${target_display}"
     record_action_counts "RMDIR" "failed"
     return 1
   fi
@@ -264,18 +391,21 @@ plan_remove_dir() {
 
 plan_mkdir() {
   local target="$1"
+  local target_display
+
+  target_display="$(format_media_path "${target}")"
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating mkdir: ${target}"
+    log_action "Simulating mkdir: ${target_display}"
     record_action_list "MKDIR" "${target}" ""
     record_action_counts "MKDIR" "simulated"
     return 0
   fi
-  log_action "Creating directory: ${target}"
+  log_action "Creating directory: ${target_display}"
   record_action_list "MKDIR" "${target}" ""
   if mkdir -p "${target}"; then
     record_action_counts "MKDIR" "performed"
   else
-    log_action "Failed to create directory: ${target}"
+    log_error "Failed to create directory: ${target_display}"
     record_action_counts "MKDIR" "failed"
     return 1
   fi
@@ -283,18 +413,21 @@ plan_mkdir() {
 
 plan_touch() {
   local target="$1"
+  local target_display
+
+  target_display="$(format_media_path "${target}")"
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating marker: ${target}"
+    log_action "Simulating marker: ${target_display}"
     record_action_list "TOUCH" "${target}" ""
     record_action_counts "TOUCH" "simulated"
     return 0
   fi
-  log_action "Creating marker: ${target}"
+  log_action "Creating marker: ${target_display}"
   record_action_list "TOUCH" "${target}" ""
   if touch "${target}"; then
     record_action_counts "TOUCH" "performed"
   else
-    log_action "Failed to create marker: ${target}"
+    log_error "Failed to create marker: ${target_display}"
     record_action_counts "TOUCH" "failed"
     return 1
   fi
@@ -312,9 +445,9 @@ is_allowed_extension() {
   local filename="$1"
   local ext="${filename##*.}"
   local ext_lc
-  ext_lc="$(lowercase "$ext")"
+  ext_lc="$(lowercase "${ext}")"
   for allowed in "${ALLOWED_FILE_EXT_LC[@]}"; do
-    if [[ "$ext_lc" == "$allowed" ]]; then
+    if [[ "${ext_lc}" == "${allowed}" ]]; then
       return 0
     fi
   done
@@ -381,7 +514,14 @@ validate_media_dirs() {
 remove_unwanted_files() {
   local dir="$1"
   local base_name
+  local tmp_files
   log_step "Removing unwanted files"
+
+  tmp_files="$(mktemp -t mediacleanup.files.XXXXXX)"
+  if ! find_all_files "${dir}" > "${tmp_files}"; then
+    rm -f "${tmp_files}"
+    return 1
+  fi
 
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
@@ -392,15 +532,28 @@ remove_unwanted_files() {
     if ! is_allowed_extension "${base_name}"; then
       plan_remove "${file}"
     fi
-  done < <(find_all_files "${dir}")
+  done < "${tmp_files}"
+  rm -f "${tmp_files}"
 }
 
 is_series_root_dir() {
   local dir="$1"
+  local tmp_dirs
   if [[ -f "${dir}/${SERIES_MARKER}" ]]; then
     return 0
   fi
-  find "${dir}" -maxdepth 1 -type d -name 'S[0-9][0-9]' -print -quit | grep -q .
+
+  tmp_dirs="$(mktemp -t mediacleanup.dirs.XXXXXX)"
+  if ! find "${dir}" -maxdepth 1 -type d -name 'S[0-9][0-9]' -print -quit > "${tmp_dirs}"; then
+    rm -f "${tmp_dirs}"
+    return 1
+  fi
+  if [[ -s "${tmp_dirs}" ]]; then
+    rm -f "${tmp_dirs}"
+    return 0
+  fi
+  rm -f "${tmp_dirs}"
+  return 1
 }
 
 is_movie_root_dir() {
@@ -413,30 +566,45 @@ is_movie_root_dir() {
 
 build_series_roots() {
   local dir="$1"
+  local tmp_dirs
   SERIES_ROOTS=()
+  tmp_dirs="$(mktemp -t mediacleanup.series.XXXXXX)"
+  if ! find "${dir}" -mindepth 1 -maxdepth 1 -type d -print0 > "${tmp_dirs}"; then
+    rm -f "${tmp_dirs}"
+    return 1
+  fi
   while IFS= read -r -d '' candidate; do
-    if is_series_root_dir "$candidate"; then
-      SERIES_ROOTS+=("$candidate")
+    if is_series_root_dir "${candidate}"; then
+      SERIES_ROOTS+=("${candidate}")
     fi
-  done < <(find "${dir}" -mindepth 1 -maxdepth 1 -type d -print0)
+  done < "${tmp_dirs}"
+  rm -f "${tmp_dirs}"
 }
 
 build_movie_roots() {
   local dir="$1"
+  local tmp_dirs
   MOVIE_ROOTS=()
+  tmp_dirs="$(mktemp -t mediacleanup.movies.XXXXXX)"
+  if ! find "${dir}" -mindepth 1 -maxdepth 1 -type d -print0 > "${tmp_dirs}"; then
+    rm -f "${tmp_dirs}"
+    return 1
+  fi
   while IFS= read -r -d '' candidate; do
-    if is_movie_root_dir "$candidate"; then
-      MOVIE_ROOTS+=("$candidate")
+    if is_movie_root_dir "${candidate}"; then
+      MOVIE_ROOTS+=("${candidate}")
     fi
-  done < <(find "${dir}" -mindepth 1 -maxdepth 1 -type d -print0)
+  done < "${tmp_dirs}"
+  rm -f "${tmp_dirs}"
 }
 
 is_under_series_root() {
   local path="$1"
   local root
   for root in "${SERIES_ROOTS[@]}"; do
-    case "$path" in
+    case "${path}" in
       "${root}"/*) return 0 ;;
+      *) ;;
     esac
   done
   return 1
@@ -446,8 +614,9 @@ is_under_movie_root() {
   local path="$1"
   local root
   for root in "${MOVIE_ROOTS[@]}"; do
-    case "$path" in
+    case "${path}" in
       "${root}"/*) return 0 ;;
+      *) ;;
     esac
   done
   return 1
@@ -458,11 +627,15 @@ find_series_root() {
   local series_name="$2"
   local series_lc
   local root
+  local root_name
+  local root_lc
 
-  series_lc="$(lowercase "$series_name")"
+  series_lc="$(lowercase "${series_name}")"
   for root in "${SERIES_ROOTS[@]}"; do
-    if [[ "$(lowercase "$(basename "$root")")" == "$series_lc" ]]; then
-      echo "$root"
+    root_name="$(basename "${root}")"
+    root_lc="$(lowercase "${root_name}")"
+    if [[ "${root_lc}" == "${series_lc}" ]]; then
+      echo "${root}"
       return 0
     fi
   done
@@ -475,11 +648,15 @@ find_movie_root() {
   local movie_name="$2"
   local movie_lc
   local root
+  local root_name
+  local root_lc
 
-  movie_lc="$(lowercase "$movie_name")"
+  movie_lc="$(lowercase "${movie_name}")"
   for root in "${MOVIE_ROOTS[@]}"; do
-    if [[ "$(lowercase "$(basename "$root")")" == "$movie_lc" ]]; then
-      echo "$root"
+    root_name="$(basename "${root}")"
+    root_lc="$(lowercase "${root_name}")"
+    if [[ "${root_lc}" == "${movie_lc}" ]]; then
+      echo "${root}"
       return 0
     fi
   done
@@ -510,28 +687,46 @@ ensure_movie_marker() {
 }
 move_files_to_root() {
   local dir="$1"
+  local tmp_files
+  local dest
+  local dest_display
   log_step "Moving files from nested dirs to root"
+  tmp_files="$(mktemp -t mediacleanup.nested.XXXXXX)"
+  if ! find_nested_files "${dir}" > "${tmp_files}"; then
+    rm -f "${tmp_files}"
+    return 1
+  fi
   while IFS= read -r -d '' file; do
-    if is_under_series_root "$file" || is_under_movie_root "$file"; then
+    if is_under_series_root "${file}" || is_under_movie_root "${file}"; then
       continue
     fi
-    if [[ "$(basename "$file")" == ".DS_Store" ]]; then
+    if [[ "$(basename "${file}")" == ".DS_Store" ]]; then
       plan_remove "${file}"
       continue
     fi
-    dest="${dir}/$(basename "$file")"
-    if [[ -e "$dest" ]]; then
-      log_action "Skipping existing file: ${dest}"
+    dest="${dir}/$(basename "${file}")"
+    if [[ -e "${dest}" ]]; then
+      dest_display="$(format_media_path "${dest}")"
+      log_action "Skipping existing file: ${dest_display}"
       record_action_counts "MOVE" "skipped"
       continue
     fi
     plan_move "${file}" "${dest}"
-  done < <(find_nested_files "${dir}")
+  done < "${tmp_files}"
+  rm -f "${tmp_files}"
 }
 
 remove_empty_subdirs() {
   local dir="$1"
+  local tmp_dirs
+  local tmp_check
   log_step "Removing empty subdirectories"
+
+  tmp_dirs="$(mktemp -t mediacleanup.empty.XXXXXX)"
+  if ! find "${dir}" -depth -mindepth 1 -type d -empty -print0 > "${tmp_dirs}"; then
+    rm -f "${tmp_dirs}"
+    return 1
+  fi
 
   while IFS= read -r -d '' subdir; do
     if [[ "${subdir}" == "${dir}" ]]; then
@@ -540,20 +735,34 @@ remove_empty_subdirs() {
     if [[ -f "${subdir}/${SERIES_MARKER}" || -f "${subdir}/${MOVIE_MARKER}" ]]; then
       continue
     fi
-    if ! find "${subdir}" -maxdepth 1 -type f ! -name ".DS_Store" -print -quit | grep -q .; then
+    tmp_check="$(mktemp -t mediacleanup.check.XXXXXX)"
+    if ! find "${subdir}" -maxdepth 1 -type f ! -name ".DS_Store" -print -quit > "${tmp_check}"; then
+      rm -f "${tmp_check}"
+      continue
+    fi
+    if [[ ! -s "${tmp_check}" ]]; then
       if [[ -f "${subdir}/.DS_Store" ]]; then
         plan_remove "${subdir}/.DS_Store"
       fi
       plan_remove_dir "${subdir}"
+      rm -f "${tmp_check}"
       continue
     fi
+    rm -f "${tmp_check}"
     plan_remove_dir "${subdir}"
-  done < <(find "${dir}" -depth -mindepth 1 -type d -empty -print0)
+  done < "${tmp_dirs}"
+  rm -f "${tmp_dirs}"
 }
 
 normalize_filenames() {
   local dir="$1"
+  local tmp_files
   log_step "Normalizing filenames"
+  tmp_files="$(mktemp -t mediacleanup.root.XXXXXX)"
+  if ! find_root_files "${dir}" > "${tmp_files}"; then
+    rm -f "${tmp_files}"
+    return 1
+  fi
   while IFS= read -r -d '' file; do
     dir_name=$(dirname "${file}")
     base_name=$(basename "${file}")
@@ -600,7 +809,8 @@ normalize_filenames() {
     if [[ "${base_name}" != "${new_name}" ]]; then
       plan_rename "${file}" "${dir_name}/${new_name}"
     fi
-  done < <(find_root_files "${dir}")
+  done < "${tmp_files}"
+  rm -f "${tmp_files}"
 }
 
 organize_series_files() {
@@ -613,8 +823,15 @@ organize_series_files() {
   local season_folder
   local series_root
   local dest
+  local dest_display
+  local tmp_files
 
   log_step "Organizing episode files"
+  tmp_files="$(mktemp -t mediacleanup.seriesfiles.XXXXXX)"
+  if ! find_root_files "${dir}" > "${tmp_files}"; then
+    rm -f "${tmp_files}"
+    return 1
+  fi
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
 
@@ -631,9 +848,9 @@ organize_series_files() {
     series_name="${BASH_REMATCH[1]}"
     season_token="${BASH_REMATCH[2]}"
     season_number="${season_token:1}"
-    season_folder=$(printf "S%02d" "$((10#$season_number))")
+    season_folder=$(printf "S%02d" "$((10#${season_number}))")
 
-    series_root=$(find_series_root "$dir" "$series_name")
+    series_root=$(find_series_root "${dir}" "${series_name}")
     if [[ ! -d "${series_root}" ]]; then
       plan_mkdir "${series_root}"
     fi
@@ -645,18 +862,20 @@ organize_series_files() {
 
     dest="${series_root}/${season_folder}/${base_name}"
     if [[ -e "${dest}" ]]; then
-      log_action "Skipping existing file: ${dest}"
+      dest_display="$(format_media_path "${dest}")"
+      log_action "Skipping existing file: ${dest_display}"
       record_action_counts "MOVE" "skipped"
       continue
     fi
 
     plan_move "${file}" "${dest}"
-  done < <(find_root_files "${dir}")
+  done < "${tmp_files}"
+  rm -f "${tmp_files}"
 }
 
 is_tv_episode_name() {
   local name="$1"
-  if [[ "$name" =~ [Ss][0-9]{1,2}[Ee][0-9]{1,2} ]]; then
+  if [[ "${name}" =~ [Ss][0-9]{1,2}[Ee][0-9]{1,2} ]]; then
     return 0
   fi
   return 1
@@ -665,10 +884,10 @@ is_tv_episode_name() {
 is_roman_numeral() {
   local token
   token="$(echo "$1" | tr '[:lower:]' '[:upper:]')"
-  case "$token" in
+  case "${token}" in
     I|II|III|IV|V|VI|VII|VIII|IX|X|XI|XII) return 0 ;;
+    *) return 1 ;;
   esac
-  return 1
 }
 
 get_movie_prefix() {
@@ -677,19 +896,19 @@ get_movie_prefix() {
   local prefix_parts=()
   local IFS='.'
 
-  if is_tv_episode_name "$name"; then
+  if is_tv_episode_name "${name}"; then
     return 1
   fi
 
-  read -r -a parts <<< "$name"
+  read -r -a parts <<< "${name}"
   for token in "${parts[@]}"; do
-    if [[ -z "$token" ]]; then
+    if [[ -z "${token}" ]]; then
       continue
     fi
-    if [[ "$token" =~ ^[0-9]+$ ]] || is_roman_numeral "$token"; then
+    if [[ "${token}" =~ ^[0-9]+$ ]] || is_roman_numeral "${token}"; then
       break
     fi
-    prefix_parts+=("$token")
+    prefix_parts+=("${token}")
   done
 
   if [[ "${#prefix_parts[@]}" -eq 0 ]]; then
@@ -702,8 +921,14 @@ get_movie_prefix() {
 movie_root_exists() {
   local prefix="$1"
   local root
+  local root_name
+  local root_lc
+  local prefix_lc
+  prefix_lc="$(lowercase "${prefix}")"
   for root in "${MOVIE_ROOTS[@]}"; do
-    if [[ "$(lowercase "$(basename "$root")")" == "$(lowercase "$prefix")" ]]; then
+    root_name="$(basename "${root}")"
+    root_lc="$(lowercase "${root_name}")"
+    if [[ "${root_lc}" == "${prefix_lc}" ]]; then
       return 0
     fi
   done
@@ -717,13 +942,20 @@ organize_movie_series() {
   local prefix
   local movie_root
   local dest
+  local dest_display
   local temp_pairs
   local temp_prefixes
+  local tmp_files
 
   log_step "Organizing movie series"
   temp_pairs="$(mktemp -t mediacleanup.pairs.XXXXXX)"
   temp_prefixes="$(mktemp -t mediacleanup.prefixes.XXXXXX)"
 
+  tmp_files="$(mktemp -t mediacleanup.movieseries.XXXXXX)"
+  if ! find_root_files "${dir}" > "${tmp_files}"; then
+    rm -f "${temp_pairs}" "${temp_prefixes}" "${tmp_files}"
+    return 1
+  fi
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
     if ! should_process_allowed_file "${base_name}"; then
@@ -732,7 +964,8 @@ organize_movie_series() {
     name_no_ext="${base_name%.*}"
     prefix="$(get_movie_prefix "${name_no_ext}")" || continue
     printf '%s\t%s\n' "${prefix}" "${file}" >> "${temp_pairs}"
-  done < <(find_root_files "${dir}")
+  done < "${tmp_files}"
+  rm -f "${tmp_files}"
 
   if [[ -s "${temp_pairs}" ]]; then
     awk -F '\t' '{count[$1]++} END {for (p in count) if (count[p] >= 2) print p}' \
@@ -752,7 +985,8 @@ organize_movie_series() {
       ensure_movie_marker "${movie_root}"
       dest="${movie_root}/$(basename "${file}")"
       if [[ -e "${dest}" ]]; then
-        log_action "Skipping existing file: ${dest}"
+        dest_display="$(format_media_path "${dest}")"
+        log_action "Skipping existing file: ${dest_display}"
         record_action_counts "MOVE" "skipped"
         continue
       fi

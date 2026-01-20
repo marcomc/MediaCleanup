@@ -7,13 +7,14 @@
 
 ## Validate Logging Output
 1. Run the script on a small sample set.
-2. Confirm each message includes a level label.
+2. Confirm INFO-level messages do not include a `[INFO]` prefix.
 3. Confirm warnings and errors are visually distinct from informational output.
 
 ## Validate Log Levels
 1. Run with log level set to WARN.
 2. Confirm INFO and DEBUG messages are suppressed.
 3. Run with log level set to ERROR and confirm only error messages are shown.
+4. Run with log level set to DEBUG and confirm full media paths are shown.
 
 ## Validate Dry-Run Default
 1. Run without apply enabled.

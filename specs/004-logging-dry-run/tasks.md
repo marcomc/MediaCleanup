@@ -33,8 +33,8 @@ description: "Task list for Logging Levels and Dry-Run"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Implement log level validation with fail-fast behavior for invalid values in `cleanup_media.sh`
-- [ ] T004 Implement a centralized logging helper with level filtering and consistent formatting in `cleanup_media.sh`
+- [x] T003 Implement log level validation with fail-fast behavior for invalid values in `cleanup_media.sh`
+- [x] T004 Implement a centralized logging helper with level filtering and consistent formatting in `cleanup_media.sh`
 - [x] T005 Add run session tracking (start/end timestamps and summary counts) in `cleanup_media.sh`
 - [x] T006 Wire action recording to update per-action summary counts in `cleanup_media.sh`
 
@@ -50,9 +50,9 @@ description: "Task list for Logging Levels and Dry-Run"
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Update `log_action`, `log_step`, and `log_dir_header` to use the new logging helper in `cleanup_media.sh`
-- [ ] T008 [US1] Emit summary output with timestamps and counts in `cleanup_media.sh`
-- [ ] T009 [US1] Strip media root prefixes from screen log paths in `cleanup_media.sh`
+- [x] T007 [US1] Update `log_action`, `log_step`, and `log_dir_header` to use the new logging helper in `cleanup_media.sh`
+- [x] T008 [US1] Emit summary output with timestamps and counts in `cleanup_media.sh`
+- [x] T009 [US1] Strip media root prefixes from screen log paths in `cleanup_media.sh`
 
 **Checkpoint**: User Story 1 should be fully functional and testable independently
 
@@ -82,8 +82,8 @@ description: "Task list for Logging Levels and Dry-Run"
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Apply level filtering across all log output in `cleanup_media.sh`
-- [ ] T014 [US3] Add ERROR-only level handling and validation in `cleanup_media.sh`
+- [x] T013 [US3] Apply level filtering across all log output in `cleanup_media.sh`
+- [x] T014 [US3] Add ERROR-only level handling and validation in `cleanup_media.sh`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -93,9 +93,9 @@ description: "Task list for Logging Levels and Dry-Run"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T015 [P] Update usage and behavior notes for new flags in `README.md`
-- [ ] T016 [P] Align validation steps with new flags in `specs/004-logging-dry-run/quickstart.md`
-- [ ] T017 Run `shellcheck` on `cleanup_media.sh` and address findings in `cleanup_media.sh`
+- [x] T015 [P] Update usage and behavior notes for new flags in `README.md`
+- [x] T016 [P] Align validation steps with new flags in `specs/004-logging-dry-run/quickstart.md`
+- [x] T017 Run `shellcheck` on `cleanup_media.sh` and address findings in `cleanup_media.sh`
 
 ---
 
