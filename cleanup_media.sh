@@ -386,6 +386,15 @@ virtual_dir_has_season_subdir() {
   ' "${VIRTUAL_DIRS_FILE}"
 }
 
+file_exists_any() {
+  local path="$1"
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    virtual_file_exists "${path}"
+    return $?
+  fi
+  [[ -e "${path}" ]]
+}
+
 validate_log_level() {
   normalize_log_level
   case "${LOG_LEVEL}" in
@@ -862,7 +871,7 @@ move_files_to_root() {
       continue
     fi
     dest="${dir}/$(basename "${file}")"
-    if [[ -e "${dest}" ]]; then
+    if file_exists_any "${dest}"; then
       dest_display="$(format_media_path "${dest}")"
       log_action "Skipping existing file: ${dest_display}"
       record_action_counts "MOVE" "skipped"
@@ -1041,7 +1050,7 @@ organize_series_files() {
     fi
 
     dest="${series_root}/${season_folder}/${base_name}"
-    if [[ -e "${dest}" ]]; then
+    if file_exists_any "${dest}"; then
       dest_display="$(format_media_path "${dest}")"
       log_action "Skipping existing file: ${dest_display}"
       record_action_counts "MOVE" "skipped"
@@ -1164,7 +1173,7 @@ organize_movie_series() {
       fi
       ensure_movie_marker "${movie_root}"
       dest="${movie_root}/$(basename "${file}")"
-      if [[ -e "${dest}" ]]; then
+      if file_exists_any "${dest}"; then
         dest_display="$(format_media_path "${dest}")"
         log_action "Skipping existing file: ${dest_display}"
         record_action_counts "MOVE" "skipped"
