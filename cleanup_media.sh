@@ -618,7 +618,7 @@ seed_config_if_missing() {
   fi
 
   if [[ ! -f "${SAMPLE_CONFIG_PATH}" ]]; then
-    log_action "Missing sample config: ${SAMPLE_CONFIG_PATH}"
+    log_error "Missing sample config: ${SAMPLE_CONFIG_PATH}"
     return 1
   fi
 
@@ -650,11 +650,11 @@ validate_media_dirs() {
   local dir
   for dir in "${MEDIA_DIRS[@]}"; do
     if [[ -z "${dir}" || "${dir}" == "/" || "${dir}" == "." || "${dir}" == ".." ]]; then
-      log_action "Invalid media directory path: ${dir}"
+      log_error "Invalid media directory path: ${dir}"
       return 1
     fi
     if [[ "${dir}" != /* ]]; then
-      log_action "Media directory must be an absolute path: ${dir}"
+      log_error "Media directory must be an absolute path: ${dir}"
       return 1
     fi
   done
@@ -1207,7 +1207,7 @@ if ! load_first_config; then
 fi
 
 if [[ "${#MEDIA_DIRS[@]}" -eq 0 || "${#ALLOWED_FILE_EXT[@]}" -eq 0 ]]; then
-  log_action "Config is missing MEDIA_DIRS or ALLOWED_FILE_EXT: ${CONFIG_PATH}"
+  log_error "Config is missing MEDIA_DIRS or ALLOWED_FILE_EXT: ${CONFIG_PATH}"
   exit 1
 fi
 if ! validate_media_dirs; then
