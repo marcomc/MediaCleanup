@@ -318,13 +318,17 @@ init_virtual_state() {
   : > "${tmp_dirs}"
 
   for dir in "${MEDIA_DIRS[@]}"; do
+    if [[ ! -d "${dir}" ]]; then
+      log_warn "Skipping missing media directory: ${dir}"
+      continue
+    fi
     if ! find "${dir}" -type f -print0 >> "${tmp_files}"; then
-      rm -f "${tmp_files}" "${tmp_dirs}"
-      return 1
+      log_warn "Skipping unreadable media directory: ${dir}"
+      continue
     fi
     if ! find "${dir}" -type d -print0 >> "${tmp_dirs}"; then
-      rm -f "${tmp_files}" "${tmp_dirs}"
-      return 1
+      log_warn "Skipping unreadable media directory: ${dir}"
+      continue
     fi
   done
 
@@ -1008,6 +1012,9 @@ remove_empty_subdirs() {
       fi
       while IFS= read -r -d '' subdir; do
         if [[ "${subdir}" == "${dir}" ]]; then
+          continue
+        fi
+        if [[ "${subdir}" != "${dir}/"* ]]; then
           continue
         fi
         if virtual_file_exists "${subdir}/${SERIES_MARKER}" || virtual_file_exists "${subdir}/${MOVIE_MARKER}"; then
