@@ -12,6 +12,9 @@ SAMPLE_CONFIG_PATH="${SCRIPT_DIR}/mediacleanup.conf.sample"
 CONFIG_PATH="/Users/${USERNAME}/${CONFIG_FILENAME}"
 LOG_LEVEL="INFO"
 RUN_MODE="dry-run"
+USE_VIRTUAL=0
+VIRTUAL_FILES_FILE=""
+VIRTUAL_DIRS_FILE=""
 USE_COLOR=0
 if [[ -t 1 ]]; then
   USE_COLOR=1
@@ -115,16 +118,42 @@ lowercase() {
 
 find_root_files() {
   local dir="$1"
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    awk -v d="${dir}/" '
+      index($0, d)==1 {
+        rel=substr($0, length(d)+1)
+        if (index(rel, "/")==0) {
+          printf "%s%c", $0, 0
+        }
+      }
+    ' "${VIRTUAL_FILES_FILE}"
+    return 0
+  fi
   find "${dir}" -maxdepth 1 -type f -print0
 }
 
 find_nested_files() {
   local dir="$1"
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    awk -v d="${dir}/" '
+      index($0, d)==1 {
+        rel=substr($0, length(d)+1)
+        if (index(rel, "/")>0) {
+          printf "%s%c", $0, 0
+        }
+      }
+    ' "${VIRTUAL_FILES_FILE}"
+    return 0
+  fi
   find "${dir}" -mindepth 2 -type f -print0
 }
 
 find_all_files() {
   local dir="$1"
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    awk -v d="${dir}/" 'index($0, d)==1 { printf "%s%c", $0, 0 }' "${VIRTUAL_FILES_FILE}"
+    return 0
+  fi
   find "${dir}" -type f -print0
 }
 
@@ -260,6 +289,103 @@ log_debug() {
   log_message "DEBUG" "$1"
 }
 
+init_virtual_state() {
+  local tmp_files
+  local tmp_dirs
+  local dir
+
+  tmp_files="$(mktemp -t mediacleanup.virtual.files.XXXXXX)"
+  tmp_dirs="$(mktemp -t mediacleanup.virtual.dirs.XXXXXX)"
+
+  : > "${tmp_files}"
+  : > "${tmp_dirs}"
+
+  for dir in "${MEDIA_DIRS[@]}"; do
+    find "${dir}" -type f -print >> "${tmp_files}"
+    find "${dir}" -type d -print >> "${tmp_dirs}"
+  done
+
+  VIRTUAL_FILES_FILE="${tmp_files}"
+  VIRTUAL_DIRS_FILE="${tmp_dirs}"
+  USE_VIRTUAL=1
+}
+
+virtual_file_exists() {
+  local path="$1"
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    grep -Fxq "${path}" "${VIRTUAL_FILES_FILE}"
+    return $?
+  fi
+  [[ -f "${path}" ]]
+}
+
+virtual_dir_exists() {
+  local path="$1"
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    grep -Fxq "${path}" "${VIRTUAL_DIRS_FILE}"
+    return $?
+  fi
+  [[ -d "${path}" ]]
+}
+
+virtual_add_file() {
+  local path="$1"
+  if grep -Fxq "${path}" "${VIRTUAL_FILES_FILE}"; then
+    return 0
+  fi
+  printf '%s\n' "${path}" >> "${VIRTUAL_FILES_FILE}"
+}
+
+virtual_remove_file() {
+  local path="$1"
+  local tmp
+  tmp="$(mktemp -t mediacleanup.virtual.rmfile.XXXXXX)"
+  grep -Fxv "${path}" "${VIRTUAL_FILES_FILE}" > "${tmp}"
+  mv "${tmp}" "${VIRTUAL_FILES_FILE}"
+}
+
+virtual_add_dir() {
+  local path="$1"
+  if grep -Fxq "${path}" "${VIRTUAL_DIRS_FILE}"; then
+    return 0
+  fi
+  printf '%s\n' "${path}" >> "${VIRTUAL_DIRS_FILE}"
+}
+
+virtual_remove_dir() {
+  local path="$1"
+  local tmp
+  tmp="$(mktemp -t mediacleanup.virtual.rmdir.XXXXXX)"
+  grep -Fxv "${path}" "${VIRTUAL_DIRS_FILE}" > "${tmp}"
+  mv "${tmp}" "${VIRTUAL_DIRS_FILE}"
+}
+
+virtual_ensure_dir_tree() {
+  local path="$1"
+  local dir
+  dir="$(dirname "${path}")"
+  while [[ -n "${dir}" && "${dir}" != "/" ]]; do
+    virtual_add_dir "${dir}"
+    dir="$(dirname "${dir}")"
+  done
+}
+
+virtual_dir_has_files() {
+  local dir="$1"
+  awk -v d="${dir}/" 'index($0, d)==1 {found=1; exit} END {exit !found}' "${VIRTUAL_FILES_FILE}"
+}
+
+virtual_dir_has_season_subdir() {
+  local dir="$1"
+  awk -v d="${dir}/" '
+    index($0, d)==1 {
+      rel=substr($0, length(d)+1)
+      if (rel ~ /^S[0-9][0-9]$/) {found=1; exit}
+    }
+    END {exit !found}
+  ' "${VIRTUAL_DIRS_FILE}"
+}
+
 validate_log_level() {
   normalize_log_level
   case "${LOG_LEVEL}" in
@@ -307,6 +433,11 @@ plan_move() {
     log_action "Simulating move: ${source_display} -> ${dest_display}"
     record_action_list "MOVE" "${source}" "${dest}"
     record_action_counts "MOVE" "simulated"
+    if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+      virtual_remove_file "${source}"
+      virtual_add_file "${dest}"
+      virtual_ensure_dir_tree "${dest}"
+    fi
     return 0
   fi
   log_action "Moving file: ${source_display} -> ${dest_display}"
@@ -332,6 +463,11 @@ plan_rename() {
     log_action "Simulating rename: ${source_display} -> ${dest_display}"
     record_action_list "RENAME" "${source}" "${dest}"
     record_action_counts "RENAME" "simulated"
+    if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+      virtual_remove_file "${source}"
+      virtual_add_file "${dest}"
+      virtual_ensure_dir_tree "${dest}"
+    fi
     return 0
   fi
   log_action "Renaming file: ${source_display} -> ${dest_display}"
@@ -354,6 +490,9 @@ plan_remove() {
     log_action "Simulating delete: ${target_display}"
     record_action_list "DELETE" "${target}" ""
     record_action_counts "DELETE" "simulated"
+    if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+      virtual_remove_file "${target}"
+    fi
     return 0
   fi
   log_action "Removing file: ${target_display}"
@@ -376,6 +515,9 @@ plan_remove_dir() {
     log_action "Simulating rmdir: ${target_display}"
     record_action_list "RMDIR" "${target}" ""
     record_action_counts "RMDIR" "simulated"
+    if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+      virtual_remove_dir "${target}"
+    fi
     return 0
   fi
   log_action "Removing empty directory: ${target_display}"
@@ -398,6 +540,10 @@ plan_mkdir() {
     log_action "Simulating mkdir: ${target_display}"
     record_action_list "MKDIR" "${target}" ""
     record_action_counts "MKDIR" "simulated"
+    if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+      virtual_add_dir "${target}"
+      virtual_ensure_dir_tree "${target}"
+    fi
     return 0
   fi
   log_action "Creating directory: ${target_display}"
@@ -420,6 +566,10 @@ plan_touch() {
     log_action "Simulating marker: ${target_display}"
     record_action_list "TOUCH" "${target}" ""
     record_action_counts "TOUCH" "simulated"
+    if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+      virtual_add_file "${target}"
+      virtual_ensure_dir_tree "${target}"
+    fi
     return 0
   fi
   log_action "Creating marker: ${target_display}"
@@ -539,8 +689,15 @@ remove_unwanted_files() {
 is_series_root_dir() {
   local dir="$1"
   local tmp_dirs
-  if [[ -f "${dir}/${SERIES_MARKER}" ]]; then
+  if virtual_file_exists "${dir}/${SERIES_MARKER}"; then
     return 0
+  fi
+
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    if virtual_dir_has_season_subdir "${dir}"; then
+      return 0
+    fi
+    return 1
   fi
 
   tmp_dirs="$(mktemp -t mediacleanup.dirs.XXXXXX)"
@@ -558,7 +715,7 @@ is_series_root_dir() {
 
 is_movie_root_dir() {
   local dir="$1"
-  if [[ -f "${dir}/${MOVIE_MARKER}" ]]; then
+  if virtual_file_exists "${dir}/${MOVIE_MARKER}"; then
     return 0
   fi
   return 1
@@ -720,7 +877,30 @@ remove_empty_subdirs() {
   local dir="$1"
   local tmp_dirs
   local tmp_check
+  local tmp_list
+  local subdir
   log_step "Removing empty subdirectories"
+
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    tmp_list="$(mktemp -t mediacleanup.virtual.empty.XXXXXX)"
+    awk -v d="${dir}/" 'index($0, d)==1 { print $0 }' "${VIRTUAL_DIRS_FILE}" > "${tmp_list}"
+    while IFS= read -r subdir; do
+      if [[ "${subdir}" == "${dir}" ]]; then
+        continue
+      fi
+      if virtual_file_exists "${subdir}/${SERIES_MARKER}" || virtual_file_exists "${subdir}/${MOVIE_MARKER}"; then
+        continue
+      fi
+      if ! virtual_dir_has_files "${subdir}"; then
+        if virtual_file_exists "${subdir}/.DS_Store"; then
+          plan_remove "${subdir}/.DS_Store"
+        fi
+        plan_remove_dir "${subdir}"
+      fi
+    done < "${tmp_list}"
+    rm -f "${tmp_list}"
+    return 0
+  fi
 
   tmp_dirs="$(mktemp -t mediacleanup.empty.XXXXXX)"
   if ! find "${dir}" -depth -mindepth 1 -type d -empty -print0 > "${tmp_dirs}"; then
@@ -1035,6 +1215,9 @@ if ! validate_media_dirs; then
 fi
 build_allowed_extensions
 init_action_logging
+if [[ "${RUN_MODE}" == "dry-run" ]]; then
+  init_virtual_state
+fi
 
 # Track total runtime for the cleanup run.
 SECONDS=0

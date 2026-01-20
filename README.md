@@ -47,6 +47,8 @@ Notes:
   rerunning.
 - Screen output omits the media root prefix by default; `--log-level DEBUG`
   shows full paths. INFO-level lines do not include a `[INFO]` prefix.
+- Dry-run stages planned moves/renames in memory so later steps use the
+  projected layout while leaving the filesystem unchanged.
 - The script emits pre-execution action logs for moves, renames, deletes, and
   empty directory removals to stdout.
 - A structured action list is written to `/tmp/mediacleanup/action-list-<timestamp>.txt`

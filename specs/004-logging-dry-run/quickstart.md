@@ -20,6 +20,7 @@
 1. Run without apply enabled.
 2. Confirm no files change and simulated actions are clearly marked.
 3. Confirm the summary explicitly states no changes were made.
+4. Confirm dry-run stages planned moves/renames so later steps use the projected layout.
 
 ## Validate Apply Mode
 1. Run with apply enabled on a controlled dataset.
