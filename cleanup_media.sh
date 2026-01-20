@@ -395,6 +395,15 @@ file_exists_any() {
   [[ -e "${path}" ]]
 }
 
+dir_exists_any() {
+  local path="$1"
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    virtual_dir_exists "${path}"
+    return $?
+  fi
+  [[ -d "${path}" ]]
+}
+
 validate_log_level() {
   normalize_log_level
   case "${LOG_LEVEL}" in
@@ -832,7 +841,7 @@ find_movie_root() {
 
 ensure_series_marker() {
   local series_root="$1"
-  if [[ ! -f "${series_root}/${SERIES_MARKER}" ]]; then
+  if ! file_exists_any "${series_root}/${SERIES_MARKER}"; then
     plan_touch "${series_root}/${SERIES_MARKER}"
   fi
 
@@ -843,7 +852,7 @@ ensure_series_marker() {
 
 ensure_movie_marker() {
   local movie_root="$1"
-  if [[ ! -f "${movie_root}/${MOVIE_MARKER}" ]]; then
+  if ! file_exists_any "${movie_root}/${MOVIE_MARKER}"; then
     plan_touch "${movie_root}/${MOVIE_MARKER}"
   fi
 
@@ -1040,12 +1049,12 @@ organize_series_files() {
     season_folder=$(printf "S%02d" "$((10#${season_number}))")
 
     series_root=$(find_series_root "${dir}" "${series_name}")
-    if [[ ! -d "${series_root}" ]]; then
+    if ! dir_exists_any "${series_root}"; then
       plan_mkdir "${series_root}"
     fi
 
     ensure_series_marker "${series_root}"
-    if [[ ! -d "${series_root}/${season_folder}" ]]; then
+    if ! dir_exists_any "${series_root}/${season_folder}"; then
       plan_mkdir "${series_root}/${season_folder}"
     fi
 
@@ -1168,7 +1177,7 @@ organize_movie_series() {
 
     if movie_root_exists "${prefix}" || grep -Fxq "${prefix}" "${temp_prefixes}"; then
       movie_root=$(find_movie_root "${dir}" "${prefix}")
-      if [[ ! -d "${movie_root}" ]]; then
+      if ! dir_exists_any "${movie_root}"; then
         plan_mkdir "${movie_root}"
       fi
       ensure_movie_marker "${movie_root}"
