@@ -22,8 +22,8 @@ description: "Task list for Logging Levels and Dry-Run"
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Define log level and run mode defaults near the top of `cleanup_media.sh`
-- [ ] T002 Add command-line option parsing for `--log-level`, `--apply`, `--dry-run`, and `--help` in `cleanup_media.sh`
+- [x] T001 Define log level and run mode defaults near the top of `cleanup_media.sh`
+- [x] T002 Add command-line option parsing for `--log-level`, `--apply`, `--dry-run`, and `--help` in `cleanup_media.sh`
 
 ---
 
@@ -35,8 +35,8 @@ description: "Task list for Logging Levels and Dry-Run"
 
 - [ ] T003 Implement log level validation with fail-fast behavior for invalid values in `cleanup_media.sh`
 - [ ] T004 Implement a centralized logging helper with level filtering and consistent formatting in `cleanup_media.sh`
-- [ ] T005 Add run session tracking (start/end timestamps and summary counts) in `cleanup_media.sh`
-- [ ] T006 Wire action recording to update per-action summary counts in `cleanup_media.sh`
+- [x] T005 Add run session tracking (start/end timestamps and summary counts) in `cleanup_media.sh`
+- [x] T006 Wire action recording to update per-action summary counts in `cleanup_media.sh`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin
 
@@ -65,9 +65,9 @@ description: "Task list for Logging Levels and Dry-Run"
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Enforce default dry-run mode with `--apply` override in `cleanup_media.sh`
-- [ ] T010 [US2] Update `plan_move`, `plan_rename`, `plan_remove`, and `plan_remove_dir` to simulate or execute based on mode in `cleanup_media.sh`
-- [ ] T011 [US2] Mark simulated actions in output and ensure the summary states no changes when dry-run in `cleanup_media.sh`
+- [x] T009 [US2] Enforce default dry-run mode with `--apply` override in `cleanup_media.sh`
+- [x] T010 [US2] Update `plan_move`, `plan_rename`, `plan_remove`, and `plan_remove_dir` to simulate or execute based on mode in `cleanup_media.sh`
+- [x] T011 [US2] Mark simulated actions in output and ensure the summary states no changes when dry-run in `cleanup_media.sh`
 
 **Checkpoint**: User Story 2 should be independently functional
 

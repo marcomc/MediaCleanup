@@ -1,20 +1,5 @@
 #!/usr/bin/env bash
 USERNAME=$(whoami)
-if [[ "$1" == "--help" || "$1" == "-h" ]]; then
-  cat <<EOF
-Usage: $(basename "$0")
-
-Seeds config at: /Users/${USERNAME}/.mediacleanup.conf
-
-Description:
-  Organizes TV shows and movies based on ~/.mediacleanup.conf.
-
-Notes:
-  If ~/.mediacleanup.conf is missing, the script copies
-  mediacleanup.conf.sample and exits so you can personalize it.
-EOF
-  exit 0
-fi
 MEDIA_DIRS=()
 ALLOWED_FILE_EXT=()
 ALLOWED_FILE_EXT_LC=()
@@ -25,6 +10,8 @@ CONFIG_FILENAME=".mediacleanup.conf"
 SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SAMPLE_CONFIG_PATH="${SCRIPT_DIR}/mediacleanup.conf.sample"
 CONFIG_PATH="/Users/${USERNAME}/${CONFIG_FILENAME}"
+LOG_LEVEL="INFO"
+RUN_MODE="dry-run"
 USE_COLOR=0
 if [[ -t 1 ]]; then
   USE_COLOR=1
@@ -40,6 +27,72 @@ fi
 RUN_ID="$(date +%Y%m%d%H%M%S)"
 ACTION_LOG_DIR="/tmp/mediacleanup"
 ACTION_LIST_FILE="${ACTION_LOG_DIR}/action-list-${RUN_ID}.txt"
+RUN_START_TS=""
+RUN_END_TS=""
+ACTION_COUNT_MOVE=0
+ACTION_COUNT_RENAME=0
+ACTION_COUNT_DELETE=0
+ACTION_COUNT_RMDIR=0
+ACTION_COUNT_MKDIR=0
+ACTION_COUNT_TOUCH=0
+OUTCOME_PERFORMED=0
+OUTCOME_SIMULATED=0
+OUTCOME_SKIPPED=0
+OUTCOME_FAILED=0
+
+show_help() {
+  cat <<EOF
+Usage: $(basename "$0") [options]
+
+Options:
+  --log-level LEVEL   Set log level (ERROR, WARN, INFO, DEBUG)
+  --dry-run           Simulate actions (default)
+  --apply             Perform actions
+  --help, -h          Show this help
+
+Seeds config at: /Users/${USERNAME}/.mediacleanup.conf
+
+Description:
+  Organizes TV shows and movies based on ~/.mediacleanup.conf.
+
+Notes:
+  If ~/.mediacleanup.conf is missing, the script copies
+  mediacleanup.conf.sample and exits so you can personalize it.
+EOF
+}
+
+parse_args() {
+  while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+      --help|-h)
+        show_help
+        exit 0
+        ;;
+      --log-level)
+        shift
+        LOG_LEVEL="${1:-}"
+        shift
+        ;;
+      --log-level=*)
+        LOG_LEVEL="${1#*=}"
+        shift
+        ;;
+      --apply)
+        RUN_MODE="apply"
+        shift
+        ;;
+      --dry-run)
+        RUN_MODE="dry-run"
+        shift
+        ;;
+      *)
+        echo "Unknown option: $1" >&2
+        echo "Run with --help to see available options." >&2
+        exit 1
+        ;;
+    esac
+  done
+}
 
 log_action() {
   echo "$1"
@@ -95,41 +148,156 @@ prune_action_logs() {
     fi
   done
 }
-record_action() {
+record_action_list() {
   local action="$1"
   local source="$2"
   local dest="$3"
   printf '%s\t%s\t%s\n' "${action}" "${source}" "${dest}" >> "${ACTION_LIST_FILE}"
 }
 
+record_action_counts() {
+  local action="$1"
+  local outcome="$2"
+
+  case "${action}" in
+    MOVE) ACTION_COUNT_MOVE=$((ACTION_COUNT_MOVE + 1)) ;;
+    RENAME) ACTION_COUNT_RENAME=$((ACTION_COUNT_RENAME + 1)) ;;
+    DELETE) ACTION_COUNT_DELETE=$((ACTION_COUNT_DELETE + 1)) ;;
+    RMDIR) ACTION_COUNT_RMDIR=$((ACTION_COUNT_RMDIR + 1)) ;;
+    MKDIR) ACTION_COUNT_MKDIR=$((ACTION_COUNT_MKDIR + 1)) ;;
+    TOUCH) ACTION_COUNT_TOUCH=$((ACTION_COUNT_TOUCH + 1)) ;;
+  esac
+
+  case "${outcome}" in
+    performed) OUTCOME_PERFORMED=$((OUTCOME_PERFORMED + 1)) ;;
+    simulated) OUTCOME_SIMULATED=$((OUTCOME_SIMULATED + 1)) ;;
+    skipped) OUTCOME_SKIPPED=$((OUTCOME_SKIPPED + 1)) ;;
+    failed) OUTCOME_FAILED=$((OUTCOME_FAILED + 1)) ;;
+  esac
+}
+
+validate_log_level() {
+  case "${LOG_LEVEL}" in
+    ERROR|WARN|INFO|DEBUG) return 0 ;;
+  esac
+  log_action "Invalid log level: ${LOG_LEVEL}"
+  return 1
+}
+
 plan_move() {
   local source="$1"
   local dest="$2"
+  if [[ "${RUN_MODE}" == "dry-run" ]]; then
+    log_action "Simulating move: ${source} -> ${dest}"
+    record_action_list "MOVE" "${source}" "${dest}"
+    record_action_counts "MOVE" "simulated"
+    return 0
+  fi
   log_action "Moving file: ${source} -> ${dest}"
-  record_action "MOVE" "${source}" "${dest}"
-  mv "${source}" "${dest}"
+  record_action_list "MOVE" "${source}" "${dest}"
+  if mv "${source}" "${dest}"; then
+    record_action_counts "MOVE" "performed"
+  else
+    log_action "Failed to move: ${source} -> ${dest}"
+    record_action_counts "MOVE" "failed"
+    return 1
+  fi
 }
 
 plan_rename() {
   local source="$1"
   local dest="$2"
+  if [[ "${RUN_MODE}" == "dry-run" ]]; then
+    log_action "Simulating rename: ${source} -> ${dest}"
+    record_action_list "RENAME" "${source}" "${dest}"
+    record_action_counts "RENAME" "simulated"
+    return 0
+  fi
   log_action "Renaming file: ${source} -> ${dest}"
-  record_action "RENAME" "${source}" "${dest}"
-  mv "${source}" "${dest}"
+  record_action_list "RENAME" "${source}" "${dest}"
+  if mv "${source}" "${dest}"; then
+    record_action_counts "RENAME" "performed"
+  else
+    log_action "Failed to rename: ${source} -> ${dest}"
+    record_action_counts "RENAME" "failed"
+    return 1
+  fi
 }
 
 plan_remove() {
   local target="$1"
+  if [[ "${RUN_MODE}" == "dry-run" ]]; then
+    log_action "Simulating delete: ${target}"
+    record_action_list "DELETE" "${target}" ""
+    record_action_counts "DELETE" "simulated"
+    return 0
+  fi
   log_action "Removing file: ${target}"
-  record_action "DELETE" "${target}" ""
-  rm "${target}"
+  record_action_list "DELETE" "${target}" ""
+  if rm "${target}"; then
+    record_action_counts "DELETE" "performed"
+  else
+    log_action "Failed to delete: ${target}"
+    record_action_counts "DELETE" "failed"
+    return 1
+  fi
 }
 
 plan_remove_dir() {
   local target="$1"
+  if [[ "${RUN_MODE}" == "dry-run" ]]; then
+    log_action "Simulating rmdir: ${target}"
+    record_action_list "RMDIR" "${target}" ""
+    record_action_counts "RMDIR" "simulated"
+    return 0
+  fi
   log_action "Removing empty directory: ${target}"
-  record_action "RMDIR" "${target}" ""
-  rmdir "${target}"
+  record_action_list "RMDIR" "${target}" ""
+  if rmdir "${target}"; then
+    record_action_counts "RMDIR" "performed"
+  else
+    log_action "Failed to remove directory: ${target}"
+    record_action_counts "RMDIR" "failed"
+    return 1
+  fi
+}
+
+plan_mkdir() {
+  local target="$1"
+  if [[ "${RUN_MODE}" == "dry-run" ]]; then
+    log_action "Simulating mkdir: ${target}"
+    record_action_list "MKDIR" "${target}" ""
+    record_action_counts "MKDIR" "simulated"
+    return 0
+  fi
+  log_action "Creating directory: ${target}"
+  record_action_list "MKDIR" "${target}" ""
+  if mkdir -p "${target}"; then
+    record_action_counts "MKDIR" "performed"
+  else
+    log_action "Failed to create directory: ${target}"
+    record_action_counts "MKDIR" "failed"
+    return 1
+  fi
+}
+
+plan_touch() {
+  local target="$1"
+  if [[ "${RUN_MODE}" == "dry-run" ]]; then
+    log_action "Simulating marker: ${target}"
+    record_action_list "TOUCH" "${target}" ""
+    record_action_counts "TOUCH" "simulated"
+    return 0
+  fi
+  log_action "Creating marker: ${target}"
+  record_action_list "TOUCH" "${target}" ""
+  if touch "${target}"; then
+    record_action_counts "TOUCH" "performed"
+  else
+    log_action "Failed to create marker: ${target}"
+    record_action_counts "TOUCH" "failed"
+    return 1
+  fi
 }
 
 build_allowed_extensions() {
@@ -322,8 +490,7 @@ find_movie_root() {
 ensure_series_marker() {
   local series_root="$1"
   if [[ ! -f "${series_root}/${SERIES_MARKER}" ]]; then
-    log_action "Creating marker: ${series_root}/${SERIES_MARKER}"
-    touch "${series_root}/${SERIES_MARKER}"
+    plan_touch "${series_root}/${SERIES_MARKER}"
   fi
 
   if ! is_under_series_root "${series_root}/dummy"; then
@@ -334,8 +501,7 @@ ensure_series_marker() {
 ensure_movie_marker() {
   local movie_root="$1"
   if [[ ! -f "${movie_root}/${MOVIE_MARKER}" ]]; then
-    log_action "Creating marker: ${movie_root}/${MOVIE_MARKER}"
-    touch "${movie_root}/${MOVIE_MARKER}"
+    plan_touch "${movie_root}/${MOVIE_MARKER}"
   fi
 
   if ! is_under_movie_root "${movie_root}/dummy"; then
@@ -356,6 +522,7 @@ move_files_to_root() {
     dest="${dir}/$(basename "$file")"
     if [[ -e "$dest" ]]; then
       log_action "Skipping existing file: ${dest}"
+      record_action_counts "MOVE" "skipped"
       continue
     fi
     plan_move "${file}" "${dest}"
@@ -468,19 +635,18 @@ organize_series_files() {
 
     series_root=$(find_series_root "$dir" "$series_name")
     if [[ ! -d "${series_root}" ]]; then
-      log_action "Creating series folder: ${series_root}"
-      mkdir -p "${series_root}"
+      plan_mkdir "${series_root}"
     fi
 
     ensure_series_marker "${series_root}"
     if [[ ! -d "${series_root}/${season_folder}" ]]; then
-      log_action "Creating season folder: ${series_root}/${season_folder}"
-      mkdir -p "${series_root}/${season_folder}"
+      plan_mkdir "${series_root}/${season_folder}"
     fi
 
     dest="${series_root}/${season_folder}/${base_name}"
     if [[ -e "${dest}" ]]; then
       log_action "Skipping existing file: ${dest}"
+      record_action_counts "MOVE" "skipped"
       continue
     fi
 
@@ -581,13 +747,13 @@ organize_movie_series() {
     if movie_root_exists "${prefix}" || grep -Fxq "${prefix}" "${temp_prefixes}"; then
       movie_root=$(find_movie_root "${dir}" "${prefix}")
       if [[ ! -d "${movie_root}" ]]; then
-        log_action "Creating movie series folder: ${movie_root}"
-        mkdir -p "${movie_root}"
+        plan_mkdir "${movie_root}"
       fi
       ensure_movie_marker "${movie_root}"
       dest="${movie_root}/$(basename "${file}")"
       if [[ -e "${dest}" ]]; then
         log_action "Skipping existing file: ${dest}"
+        record_action_counts "MOVE" "skipped"
         continue
       fi
       plan_move "${file}" "${dest}"
@@ -614,6 +780,11 @@ run_cleanup_steps() {
   done
 }
 
+parse_args "$@"
+if ! validate_log_level; then
+  exit 1
+fi
+
 if ! load_first_config; then
   if seed_config_if_missing; then
     log_action "Config seeded at ${CONFIG_PATH}. Update it before rerunning."
@@ -633,6 +804,8 @@ init_action_logging
 
 # Track total runtime for the cleanup run.
 SECONDS=0
+RUN_START_TS="$(date '+%Y-%m-%d %H:%M:%S')"
+log_action "Run started at ${RUN_START_TS} (${RUN_MODE})"
 # Loop through each directory and call the functions
 for dir in "${MEDIA_DIRS[@]}"; do
   log_dir_header "${dir}"
@@ -640,6 +813,24 @@ for dir in "${MEDIA_DIRS[@]}"; do
   build_movie_roots "${dir}"
   run_cleanup_steps "${dir}"
 done
+RUN_END_TS="$(date '+%Y-%m-%d %H:%M:%S')"
 log_step "Cleanup complete in ${SECONDS}s"
 log_step "Action list recorded at ${ACTION_LIST_FILE}"
+log_step "Run ended at ${RUN_END_TS}"
+log_step "Summary at ${RUN_END_TS}:"
+log_step "Action   Count"
+log_step "Moves    ${ACTION_COUNT_MOVE}"
+log_step "Renames  ${ACTION_COUNT_RENAME}"
+log_step "Deletes  ${ACTION_COUNT_DELETE}"
+log_step "Rmdirs   ${ACTION_COUNT_RMDIR}"
+log_step "Mkdirs   ${ACTION_COUNT_MKDIR}"
+log_step "Touches  ${ACTION_COUNT_TOUCH}"
+log_step "Outcome   Count"
+log_step "Performed ${OUTCOME_PERFORMED}"
+log_step "Simulated ${OUTCOME_SIMULATED}"
+log_step "Skipped   ${OUTCOME_SKIPPED}"
+log_step "Failed    ${OUTCOME_FAILED}"
+if [[ "${RUN_MODE}" == "dry-run" ]]; then
+  log_step "Dry-run: no changes made."
+fi
 prune_action_logs
