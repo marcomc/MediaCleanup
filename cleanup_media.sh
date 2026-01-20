@@ -375,6 +375,18 @@ virtual_dir_has_files() {
   awk -v d="${dir}/" 'index($0, d)==1 {found=1; exit} END {exit !found}' "${VIRTUAL_FILES_FILE}"
 }
 
+virtual_dir_has_non_ds_files() {
+  local dir="$1"
+  awk -v d="${dir}/" '
+    index($0, d)==1 {
+      if ($0 ~ /\/\.DS_Store$/) next
+      found=1
+      exit
+    }
+    END {exit !found}
+  ' "${VIRTUAL_FILES_FILE}"
+}
+
 virtual_dir_has_season_subdir() {
   local dir="$1"
   awk -v d="${dir}/" '
@@ -912,7 +924,7 @@ remove_empty_subdirs() {
       if virtual_file_exists "${subdir}/${SERIES_MARKER}" || virtual_file_exists "${subdir}/${MOVIE_MARKER}"; then
         continue
       fi
-      if ! virtual_dir_has_files "${subdir}"; then
+      if ! virtual_dir_has_non_ds_files "${subdir}"; then
         if virtual_file_exists "${subdir}/.DS_Store"; then
           plan_remove "${subdir}/.DS_Store"
         fi
