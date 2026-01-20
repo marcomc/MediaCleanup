@@ -119,14 +119,19 @@ lowercase() {
 find_root_files() {
   local dir="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    awk -v d="${dir}/" '
-      index($0, d)==1 {
-        rel=substr($0, length(d)+1)
-        if (index(rel, "/")==0) {
-          printf "%s%c", $0, 0
-        }
-      }
-    ' "${VIRTUAL_FILES_FILE}"
+    local entry
+    local prefix="${dir}/"
+    local rel
+    while IFS= read -r -d '' entry; do
+      if [[ "${entry}" != "${prefix}"* ]]; then
+        continue
+      fi
+      rel="${entry#"${prefix}"}"
+      if [[ "${rel}" == */* ]]; then
+        continue
+      fi
+      printf '%s\0' "${entry}"
+    done < "${VIRTUAL_FILES_FILE}"
     return 0
   fi
   find "${dir}" -maxdepth 1 -type f -print0
@@ -135,14 +140,19 @@ find_root_files() {
 find_nested_files() {
   local dir="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    awk -v d="${dir}/" '
-      index($0, d)==1 {
-        rel=substr($0, length(d)+1)
-        if (index(rel, "/")>0) {
-          printf "%s%c", $0, 0
-        }
-      }
-    ' "${VIRTUAL_FILES_FILE}"
+    local entry
+    local prefix="${dir}/"
+    local rel
+    while IFS= read -r -d '' entry; do
+      if [[ "${entry}" != "${prefix}"* ]]; then
+        continue
+      fi
+      rel="${entry#"${prefix}"}"
+      if [[ "${rel}" != */* ]]; then
+        continue
+      fi
+      printf '%s\0' "${entry}"
+    done < "${VIRTUAL_FILES_FILE}"
     return 0
   fi
   find "${dir}" -mindepth 2 -type f -print0
@@ -151,7 +161,14 @@ find_nested_files() {
 find_all_files() {
   local dir="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    awk -v d="${dir}/" 'index($0, d)==1 { printf "%s%c", $0, 0 }' "${VIRTUAL_FILES_FILE}"
+    local entry
+    local prefix="${dir}/"
+    while IFS= read -r -d '' entry; do
+      if [[ "${entry}" != "${prefix}"* ]]; then
+        continue
+      fi
+      printf '%s\0' "${entry}"
+    done < "${VIRTUAL_FILES_FILE}"
     return 0
   fi
   find "${dir}" -type f -print0
@@ -301,8 +318,14 @@ init_virtual_state() {
   : > "${tmp_dirs}"
 
   for dir in "${MEDIA_DIRS[@]}"; do
-    find "${dir}" -type f -print >> "${tmp_files}"
-    find "${dir}" -type d -print >> "${tmp_dirs}"
+    if ! find "${dir}" -type f -print0 >> "${tmp_files}"; then
+      rm -f "${tmp_files}" "${tmp_dirs}"
+      return 1
+    fi
+    if ! find "${dir}" -type d -print0 >> "${tmp_dirs}"; then
+      rm -f "${tmp_files}" "${tmp_dirs}"
+      return 1
+    fi
   done
 
   VIRTUAL_FILES_FILE="${tmp_files}"
@@ -310,10 +333,23 @@ init_virtual_state() {
   USE_VIRTUAL=1
 }
 
+virtual_list_contains() {
+  local list_file="$1"
+  local target="$2"
+  local entry
+
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" == "${target}" ]]; then
+      return 0
+    fi
+  done < "${list_file}"
+  return 1
+}
+
 virtual_file_exists() {
   local path="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    grep -Fxq "${path}" "${VIRTUAL_FILES_FILE}"
+    virtual_list_contains "${VIRTUAL_FILES_FILE}" "${path}"
     return $?
   fi
   [[ -f "${path}" ]]
@@ -322,7 +358,7 @@ virtual_file_exists() {
 virtual_dir_exists() {
   local path="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    grep -Fxq "${path}" "${VIRTUAL_DIRS_FILE}"
+    virtual_list_contains "${VIRTUAL_DIRS_FILE}" "${path}"
     return $?
   fi
   [[ -d "${path}" ]]
@@ -330,33 +366,47 @@ virtual_dir_exists() {
 
 virtual_add_file() {
   local path="$1"
-  if grep -Fxq "${path}" "${VIRTUAL_FILES_FILE}"; then
+  if virtual_list_contains "${VIRTUAL_FILES_FILE}" "${path}"; then
     return 0
   fi
-  printf '%s\n' "${path}" >> "${VIRTUAL_FILES_FILE}"
+  printf '%s\0' "${path}" >> "${VIRTUAL_FILES_FILE}"
 }
 
 virtual_remove_file() {
   local path="$1"
   local tmp
+  local entry
   tmp="$(mktemp -t mediacleanup.virtual.rmfile.XXXXXX)"
-  grep -Fxv "${path}" "${VIRTUAL_FILES_FILE}" > "${tmp}"
+  : > "${tmp}"
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" == "${path}" ]]; then
+      continue
+    fi
+    printf '%s\0' "${entry}" >> "${tmp}"
+  done < "${VIRTUAL_FILES_FILE}"
   mv "${tmp}" "${VIRTUAL_FILES_FILE}"
 }
 
 virtual_add_dir() {
   local path="$1"
-  if grep -Fxq "${path}" "${VIRTUAL_DIRS_FILE}"; then
+  if virtual_list_contains "${VIRTUAL_DIRS_FILE}" "${path}"; then
     return 0
   fi
-  printf '%s\n' "${path}" >> "${VIRTUAL_DIRS_FILE}"
+  printf '%s\0' "${path}" >> "${VIRTUAL_DIRS_FILE}"
 }
 
 virtual_remove_dir() {
   local path="$1"
   local tmp
+  local entry
   tmp="$(mktemp -t mediacleanup.virtual.rmdir.XXXXXX)"
-  grep -Fxv "${path}" "${VIRTUAL_DIRS_FILE}" > "${tmp}"
+  : > "${tmp}"
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" == "${path}" ]]; then
+      continue
+    fi
+    printf '%s\0' "${entry}" >> "${tmp}"
+  done < "${VIRTUAL_DIRS_FILE}"
   mv "${tmp}" "${VIRTUAL_DIRS_FILE}"
 }
 
@@ -372,72 +422,62 @@ virtual_ensure_dir_tree() {
 
 virtual_dir_has_files() {
   local dir="$1"
-  awk -v d="${dir}/" 'index($0, d)==1 {found=1; exit} END {exit !found}' "${VIRTUAL_FILES_FILE}"
+  local entry
+  local prefix="${dir}/"
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" == "${prefix}"* ]]; then
+      return 0
+    fi
+  done < "${VIRTUAL_FILES_FILE}"
+  return 1
 }
 
 virtual_dir_has_non_ds_files() {
   local dir="$1"
-  awk -v d="${dir}/" '
-    index($0, d)==1 {
-      if ($0 ~ /\/\.DS_Store$/) next
-      found=1
-      exit
-    }
-    END {exit !found}
-  ' "${VIRTUAL_FILES_FILE}"
+  local entry
+  local prefix="${dir}/"
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" != "${prefix}"* ]]; then
+      continue
+    fi
+    if [[ "${entry}" == */.DS_Store ]]; then
+      continue
+    fi
+    return 0
+  done < "${VIRTUAL_FILES_FILE}"
+  return 1
 }
 
 virtual_dir_has_child_dirs() {
   local dir="$1"
-  awk -v d="${dir}/" -v self="${dir}" '
-    $0 == self { next }
-    index($0, d)==1 { found=1; exit }
-    END { exit !found }
-  ' "${VIRTUAL_DIRS_FILE}"
-}
-
-virtual_list_dirs_by_depth() {
-  local root="$1"
-  local tmp_list
-  local tmp_raw
-  local tmp_sorted
-  tmp_list="$(mktemp -t mediacleanup.virtual.depth.XXXXXX)"
-  tmp_raw="$(mktemp -t mediacleanup.virtual.depthraw.XXXXXX)"
-  tmp_sorted="$(mktemp -t mediacleanup.virtual.depthsorted.XXXXXX)"
-
-  if ! awk -v d="${root}/" '
-    index($0, d)==1 {
-      depth=gsub("/", "/", $0)
-      printf "%d\t%s\n", depth, $0
-    }
-  ' "${VIRTUAL_DIRS_FILE}" > "${tmp_raw}"; then
-    rm -f "${tmp_list}" "${tmp_raw}" "${tmp_sorted}"
-    return 1
-  fi
-
-  if ! sort -rn "${tmp_raw}" > "${tmp_sorted}"; then
-    rm -f "${tmp_list}" "${tmp_raw}" "${tmp_sorted}"
-    return 1
-  fi
-
-  if ! cut -f2- "${tmp_sorted}" > "${tmp_list}"; then
-    rm -f "${tmp_list}" "${tmp_raw}" "${tmp_sorted}"
-    return 1
-  fi
-
-  rm -f "${tmp_raw}" "${tmp_sorted}"
-  echo "${tmp_list}"
+  local entry
+  local prefix="${dir}/"
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" == "${dir}" ]]; then
+      continue
+    fi
+    if [[ "${entry}" == "${prefix}"* ]]; then
+      return 0
+    fi
+  done < "${VIRTUAL_DIRS_FILE}"
+  return 1
 }
 
 virtual_dir_has_season_subdir() {
   local dir="$1"
-  awk -v d="${dir}/" '
-    index($0, d)==1 {
-      rel=substr($0, length(d)+1)
-      if (rel ~ /^S[0-9][0-9]$/) {found=1; exit}
-    }
-    END {exit !found}
-  ' "${VIRTUAL_DIRS_FILE}"
+  local entry
+  local rel
+  local prefix="${dir}/"
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" != "${prefix}"* ]]; then
+      continue
+    fi
+    rel="${entry#"${prefix}"}"
+    if [[ "${rel}" =~ ^S[0-9]{2}$ ]]; then
+      return 0
+    fi
+  done < "${VIRTUAL_DIRS_FILE}"
+  return 1
 }
 
 file_exists_any() {
@@ -952,30 +992,41 @@ remove_empty_subdirs() {
   local dir="$1"
   local tmp_dirs
   local tmp_check
-  local tmp_list
+  local tmp_snapshot
   local subdir
+  local changed
   log_step "Removing empty subdirectories"
 
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    tmp_list="$(virtual_list_dirs_by_depth "${dir}")"
-    while IFS= read -r subdir; do
-      if [[ "${subdir}" == "${dir}" ]]; then
-        continue
+    changed=1
+    while [[ "${changed}" -eq 1 ]]; do
+      changed=0
+      tmp_snapshot="$(mktemp -t mediacleanup.virtual.dirssnap.XXXXXX)"
+      if ! cp "${VIRTUAL_DIRS_FILE}" "${tmp_snapshot}"; then
+        rm -f "${tmp_snapshot}"
+        return 1
       fi
-      if virtual_file_exists "${subdir}/${SERIES_MARKER}" || virtual_file_exists "${subdir}/${MOVIE_MARKER}"; then
-        continue
-      fi
-      if virtual_dir_has_child_dirs "${subdir}"; then
-        continue
-      fi
-      if ! virtual_dir_has_non_ds_files "${subdir}"; then
+      while IFS= read -r -d '' subdir; do
+        if [[ "${subdir}" == "${dir}" ]]; then
+          continue
+        fi
+        if virtual_file_exists "${subdir}/${SERIES_MARKER}" || virtual_file_exists "${subdir}/${MOVIE_MARKER}"; then
+          continue
+        fi
+        if virtual_dir_has_child_dirs "${subdir}"; then
+          continue
+        fi
+        if virtual_dir_has_non_ds_files "${subdir}"; then
+          continue
+        fi
         if virtual_file_exists "${subdir}/.DS_Store"; then
           plan_remove "${subdir}/.DS_Store"
         fi
         plan_remove_dir "${subdir}"
-      fi
-    done < "${tmp_list}"
-    rm -f "${tmp_list}"
+        changed=1
+      done < "${tmp_snapshot}"
+      rm -f "${tmp_snapshot}"
+    done
     return 0
   fi
 
@@ -1293,7 +1344,9 @@ fi
 build_allowed_extensions
 init_action_logging
 if [[ "${RUN_MODE}" == "dry-run" ]]; then
-  init_virtual_state
+  if ! init_virtual_state; then
+    exit 1
+  fi
 fi
 
 # Track total runtime for the cleanup run.

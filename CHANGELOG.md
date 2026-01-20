@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 - Screen output now omits media root prefixes by default.
 - Dry-run logging uses virtual state for collision-aware planning.
+- Dry-run virtual state stores paths with NUL delimiters to handle edge-case filenames.
 
 ### Docs
 
