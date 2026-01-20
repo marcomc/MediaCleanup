@@ -270,7 +270,7 @@ log_message() {
   if ! is_log_level_enabled "${level}"; then
     return 0
   fi
-  if [[ "${LOG_LEVEL}" == "INFO" && "${level}" == "INFO" ]]; then
+  if [[ "${level}" == "INFO" ]]; then
     echo "$*"
     return 0
   fi
