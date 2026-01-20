@@ -16,7 +16,7 @@ Add leveled logging with consistent output formatting, introduce a safe default 
 **Target Platform**: macOS  
 **Project Type**: Single script repository  
 **Performance Goals**: No material runtime regression on the same dataset  
-**Constraints**: Preserve path guards; log destructive actions before execution; default to dry-run unless explicitly applied; no external dependencies  
+**Constraints**: Preserve path guards; log destructive actions before execution; screen output should omit media root prefixes; default to dry-run unless explicitly applied; no external dependencies  
 **Scale/Scope**: Personal media libraries ranging from small samples to large collections (100k+ files)
 
 ## Constitution Check

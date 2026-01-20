@@ -52,6 +52,7 @@ description: "Task list for Logging Levels and Dry-Run"
 
 - [ ] T007 [US1] Update `log_action`, `log_step`, and `log_dir_header` to use the new logging helper in `cleanup_media.sh`
 - [ ] T008 [US1] Emit summary output with timestamps and counts in `cleanup_media.sh`
+- [ ] T009 [US1] Strip media root prefixes from screen log paths in `cleanup_media.sh`
 
 **Checkpoint**: User Story 1 should be fully functional and testable independently
 
@@ -65,9 +66,9 @@ description: "Task list for Logging Levels and Dry-Run"
 
 ### Implementation for User Story 2
 
-- [x] T009 [US2] Enforce default dry-run mode with `--apply` override in `cleanup_media.sh`
-- [x] T010 [US2] Update `plan_move`, `plan_rename`, `plan_remove`, and `plan_remove_dir` to simulate or execute based on mode in `cleanup_media.sh`
-- [x] T011 [US2] Mark simulated actions in output and ensure the summary states no changes when dry-run in `cleanup_media.sh`
+- [x] T010 [US2] Enforce default dry-run mode with `--apply` override in `cleanup_media.sh`
+- [x] T011 [US2] Update `plan_move`, `plan_rename`, `plan_remove`, and `plan_remove_dir` to simulate or execute based on mode in `cleanup_media.sh`
+- [x] T012 [US2] Mark simulated actions in output and ensure the summary states no changes when dry-run in `cleanup_media.sh`
 
 **Checkpoint**: User Story 2 should be independently functional
 
@@ -81,8 +82,8 @@ description: "Task list for Logging Levels and Dry-Run"
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] Apply level filtering across all log output in `cleanup_media.sh`
-- [ ] T013 [US3] Add ERROR-only level handling and validation in `cleanup_media.sh`
+- [ ] T013 [US3] Apply level filtering across all log output in `cleanup_media.sh`
+- [ ] T014 [US3] Add ERROR-only level handling and validation in `cleanup_media.sh`
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -92,9 +93,9 @@ description: "Task list for Logging Levels and Dry-Run"
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T014 [P] Update usage and behavior notes for new flags in `README.md`
-- [ ] T015 [P] Align validation steps with new flags in `specs/004-logging-dry-run/quickstart.md`
-- [ ] T016 Run `shellcheck` on `cleanup_media.sh` and address findings in `cleanup_media.sh`
+- [ ] T015 [P] Update usage and behavior notes for new flags in `README.md`
+- [ ] T016 [P] Align validation steps with new flags in `specs/004-logging-dry-run/quickstart.md`
+- [ ] T017 Run `shellcheck` on `cleanup_media.sh` and address findings in `cleanup_media.sh`
 
 ---
 
@@ -115,7 +116,7 @@ description: "Task list for Logging Levels and Dry-Run"
 
 ### Parallel Opportunities
 
-- T014 and T015 can run in parallel since they touch different files.
+- T015 and T016 can run in parallel since they touch different files.
 - User story tasks are sequential within `cleanup_media.sh` due to shared edits.
 
 ---
