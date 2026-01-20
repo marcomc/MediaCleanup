@@ -387,6 +387,48 @@ virtual_dir_has_non_ds_files() {
   ' "${VIRTUAL_FILES_FILE}"
 }
 
+virtual_dir_has_child_dirs() {
+  local dir="$1"
+  awk -v d="${dir}/" -v self="${dir}" '
+    $0 == self { next }
+    index($0, d)==1 { found=1; exit }
+    END { exit !found }
+  ' "${VIRTUAL_DIRS_FILE}"
+}
+
+virtual_list_dirs_by_depth() {
+  local root="$1"
+  local tmp_list
+  local tmp_raw
+  local tmp_sorted
+  tmp_list="$(mktemp -t mediacleanup.virtual.depth.XXXXXX)"
+  tmp_raw="$(mktemp -t mediacleanup.virtual.depthraw.XXXXXX)"
+  tmp_sorted="$(mktemp -t mediacleanup.virtual.depthsorted.XXXXXX)"
+
+  if ! awk -v d="${root}/" '
+    index($0, d)==1 {
+      depth=gsub("/", "/", $0)
+      printf "%d\t%s\n", depth, $0
+    }
+  ' "${VIRTUAL_DIRS_FILE}" > "${tmp_raw}"; then
+    rm -f "${tmp_list}" "${tmp_raw}" "${tmp_sorted}"
+    return 1
+  fi
+
+  if ! sort -rn "${tmp_raw}" > "${tmp_sorted}"; then
+    rm -f "${tmp_list}" "${tmp_raw}" "${tmp_sorted}"
+    return 1
+  fi
+
+  if ! cut -f2- "${tmp_sorted}" > "${tmp_list}"; then
+    rm -f "${tmp_list}" "${tmp_raw}" "${tmp_sorted}"
+    return 1
+  fi
+
+  rm -f "${tmp_raw}" "${tmp_sorted}"
+  echo "${tmp_list}"
+}
+
 virtual_dir_has_season_subdir() {
   local dir="$1"
   awk -v d="${dir}/" '
@@ -915,13 +957,15 @@ remove_empty_subdirs() {
   log_step "Removing empty subdirectories"
 
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    tmp_list="$(mktemp -t mediacleanup.virtual.empty.XXXXXX)"
-    awk -v d="${dir}/" 'index($0, d)==1 { print $0 }' "${VIRTUAL_DIRS_FILE}" > "${tmp_list}"
+    tmp_list="$(virtual_list_dirs_by_depth "${dir}")"
     while IFS= read -r subdir; do
       if [[ "${subdir}" == "${dir}" ]]; then
         continue
       fi
       if virtual_file_exists "${subdir}/${SERIES_MARKER}" || virtual_file_exists "${subdir}/${MOVIE_MARKER}"; then
+        continue
+      fi
+      if virtual_dir_has_child_dirs "${subdir}"; then
         continue
       fi
       if ! virtual_dir_has_non_ds_files "${subdir}"; then
