@@ -24,9 +24,9 @@ tests/
 Bash (macOS system bash): Follow standard conventions
 
 ## Recent Changes
+- 004-logging-dry-run: Added Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr)
 - 003-optimize-cleanup-script: Added Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr)
 - 003-optimize-cleanup-script: Added Local filesystem under configured media directories
-- 002-movie-series-support: Added Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
