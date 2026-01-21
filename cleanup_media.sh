@@ -125,22 +125,40 @@ lowercase() {
   echo "$1" | tr '[:upper:]' '[:lower:]'
 }
 
+filter_virtual_files_by_depth() {
+  local dir="$1"
+  local depth_check="$2"
+  local entry
+  local prefix="${dir}/"
+  local rel
+  
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" != "${prefix}"* ]]; then
+      continue
+    fi
+    rel="${entry#"${prefix}"}"
+    
+    case "${depth_check}" in
+      root)
+        [[ "${rel}" != */* ]] && printf '%s\0' "${entry}"
+        ;;
+      nested)
+        [[ "${rel}" == */* ]] && printf '%s\0' "${entry}"
+        ;;
+      all)
+        printf '%s\0' "${entry}"
+        ;;
+      *)
+        return 1
+        ;;
+    esac
+  done < "${VIRTUAL_FILES_FILE}"
+}
+
 find_root_files() {
   local dir="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    local entry
-    local prefix="${dir}/"
-    local rel
-    while IFS= read -r -d '' entry; do
-      if [[ "${entry}" != "${prefix}"* ]]; then
-        continue
-      fi
-      rel="${entry#"${prefix}"}"
-      if [[ "${rel}" == */* ]]; then
-        continue
-      fi
-      printf '%s\0' "${entry}"
-    done < "${VIRTUAL_FILES_FILE}"
+    filter_virtual_files_by_depth "${dir}" "root"
     return 0
   fi
   find "${dir}" -maxdepth 1 -type f -print0
@@ -149,19 +167,7 @@ find_root_files() {
 find_nested_files() {
   local dir="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    local entry
-    local prefix="${dir}/"
-    local rel
-    while IFS= read -r -d '' entry; do
-      if [[ "${entry}" != "${prefix}"* ]]; then
-        continue
-      fi
-      rel="${entry#"${prefix}"}"
-      if [[ "${rel}" != */* ]]; then
-        continue
-      fi
-      printf '%s\0' "${entry}"
-    done < "${VIRTUAL_FILES_FILE}"
+    filter_virtual_files_by_depth "${dir}" "nested"
     return 0
   fi
   find "${dir}" -mindepth 2 -type f -print0
@@ -170,14 +176,7 @@ find_nested_files() {
 find_all_files() {
   local dir="$1"
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    local entry
-    local prefix="${dir}/"
-    while IFS= read -r -d '' entry; do
-      if [[ "${entry}" != "${prefix}"* ]]; then
-        continue
-      fi
-      printf '%s\0' "${entry}"
-    done < "${VIRTUAL_FILES_FILE}"
+    filter_virtual_files_by_depth "${dir}" "all"
     return 0
   fi
   find "${dir}" -type f -print0
@@ -385,22 +384,27 @@ virtual_add_file() {
   printf '%s\0' "${path}" >> "${VIRTUAL_FILES_FILE}"
 }
 
-virtual_remove_file() {
-  local path="$1"
+virtual_remove_from_list() {
+  local list_file="$1"
+  local path="$2"
   local tmp
   local entry
-  tmp="$(mktemp -t mediacleanup.virtual.rmfile.XXXXXX)"
+  tmp="$(mktemp -t mediacleanup.virtual.rm.XXXXXX)"
   : > "${tmp}"
   while IFS= read -r -d '' entry; do
     if [[ "${entry}" == "${path}" ]]; then
       continue
     fi
     printf '%s\0' "${entry}" >> "${tmp}"
-  done < "${VIRTUAL_FILES_FILE}"
-  if ! mv "${tmp}" "${VIRTUAL_FILES_FILE}"; then
+  done < "${list_file}"
+  if ! mv "${tmp}" "${list_file}"; then
     rm -f "${tmp}"
     return 1
   fi
+}
+
+virtual_remove_file() {
+  virtual_remove_from_list "${VIRTUAL_FILES_FILE}" "$1"
 }
 
 virtual_add_dir() {
@@ -412,21 +416,7 @@ virtual_add_dir() {
 }
 
 virtual_remove_dir() {
-  local path="$1"
-  local tmp
-  local entry
-  tmp="$(mktemp -t mediacleanup.virtual.rmdir.XXXXXX)"
-  : > "${tmp}"
-  while IFS= read -r -d '' entry; do
-    if [[ "${entry}" == "${path}" ]]; then
-      continue
-    fi
-    printf '%s\0' "${entry}" >> "${tmp}"
-  done < "${VIRTUAL_DIRS_FILE}"
-  if ! mv "${tmp}" "${VIRTUAL_DIRS_FILE}"; then
-    rm -f "${tmp}"
-    return 1
-  fi
+  virtual_remove_from_list "${VIRTUAL_DIRS_FILE}" "$1"
 }
 
 virtual_ensure_dir_tree() {
@@ -555,18 +545,21 @@ format_media_path() {
   echo "${path}"
 }
 
-plan_move() {
-  local source="$1"
-  local dest="$2"
+execute_file_operation() {
+  local action="$1"
+  local action_verb="$2"
+  local source="$3"
+  local dest="$4"
   local source_display
   local dest_display
 
   source_display="$(format_media_path "${source}")"
   dest_display="$(format_media_path "${dest}")"
+  
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating move: ${source_display} -> ${dest_display}"
-    record_action_list "MOVE" "${source}" "${dest}"
-    record_action_counts "MOVE" "simulated"
+    log_action "Simulating ${action_verb}: ${source_display} -> ${dest_display}"
+    record_action_list "${action}" "${source}" "${dest}"
+    record_action_counts "${action}" "simulated"
     if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
       virtual_remove_file "${source}"
       virtual_add_file "${dest}"
@@ -574,45 +567,26 @@ plan_move() {
     fi
     return 0
   fi
-  log_action "Moving file: ${source_display} -> ${dest_display}"
-  record_action_list "MOVE" "${source}" "${dest}"
+  
+  local capitalized
+  capitalized="$(tr '[:lower:]' '[:upper:]' <<< "${action_verb:0:1}")"
+  log_action "${capitalized}${action_verb:1} file: ${source_display} -> ${dest_display}"
+  record_action_list "${action}" "${source}" "${dest}"
   if mv "${source}" "${dest}"; then
-    record_action_counts "MOVE" "performed"
+    record_action_counts "${action}" "performed"
   else
-    log_error "Failed to move: ${source_display} -> ${dest_display}"
-    record_action_counts "MOVE" "failed"
+    log_error "Failed to ${action_verb}: ${source_display} -> ${dest_display}"
+    record_action_counts "${action}" "failed"
     return 1
   fi
 }
 
-plan_rename() {
-  local source="$1"
-  local dest="$2"
-  local source_display
-  local dest_display
+plan_move() {
+  execute_file_operation "MOVE" "move" "$1" "$2"
+}
 
-  source_display="$(format_media_path "${source}")"
-  dest_display="$(format_media_path "${dest}")"
-  if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating rename: ${source_display} -> ${dest_display}"
-    record_action_list "RENAME" "${source}" "${dest}"
-    record_action_counts "RENAME" "simulated"
-    if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-      virtual_remove_file "${source}"
-      virtual_add_file "${dest}"
-      virtual_ensure_dir_tree "${dest}"
-    fi
-    return 0
-  fi
-  log_action "Renaming file: ${source_display} -> ${dest_display}"
-  record_action_list "RENAME" "${source}" "${dest}"
-  if mv "${source}" "${dest}"; then
-    record_action_counts "RENAME" "performed"
-  else
-    log_error "Failed to rename: ${source_display} -> ${dest_display}"
-    record_action_counts "RENAME" "failed"
-    return 1
-  fi
+plan_rename() {
+  execute_file_operation "RENAME" "rename" "$1" "$2"
 }
 
 plan_remove() {
@@ -629,7 +603,7 @@ plan_remove() {
     fi
     return 0
   fi
-  log_action "Removing file: ${target_display}"
+  log_action "Deleting: ${target_display}"
   record_action_list "DELETE" "${target}" ""
   if rm "${target}"; then
     record_action_counts "DELETE" "performed"
@@ -654,7 +628,7 @@ plan_remove_dir() {
     fi
     return 0
   fi
-  log_action "Removing empty directory: ${target_display}"
+  log_action "Removing directory: ${target_display}"
   record_action_list "RMDIR" "${target}" ""
   if rmdir "${target}"; then
     record_action_counts "RMDIR" "performed"
