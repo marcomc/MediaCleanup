@@ -397,7 +397,10 @@ virtual_remove_file() {
     fi
     printf '%s\0' "${entry}" >> "${tmp}"
   done < "${VIRTUAL_FILES_FILE}"
-  mv "${tmp}" "${VIRTUAL_FILES_FILE}"
+  if ! mv "${tmp}" "${VIRTUAL_FILES_FILE}"; then
+    rm -f "${tmp}"
+    return 1
+  fi
 }
 
 virtual_add_dir() {
@@ -420,7 +423,10 @@ virtual_remove_dir() {
     fi
     printf '%s\0' "${entry}" >> "${tmp}"
   done < "${VIRTUAL_DIRS_FILE}"
-  mv "${tmp}" "${VIRTUAL_DIRS_FILE}"
+  if ! mv "${tmp}" "${VIRTUAL_DIRS_FILE}"; then
+    rm -f "${tmp}"
+    return 1
+  fi
 }
 
 virtual_ensure_dir_tree() {
