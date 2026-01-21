@@ -103,9 +103,7 @@ log_action() {
 
 log_dir_header() {
   local dir="$1"
-  local display_dir
-  display_dir="$(format_media_path "${dir}")"
-  log_message "INFO" "${COLOR_DIR}== ${display_dir}${COLOR_RESET}"
+  log_message "INFO" "${COLOR_DIR}== ${dir}${COLOR_RESET}"
 }
 
 log_step() {
