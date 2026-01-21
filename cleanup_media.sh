@@ -43,12 +43,19 @@ OUTCOME_SIMULATED=0
 OUTCOME_SKIPPED=0
 OUTCOME_FAILED=0
 
+cleanup_virtual_state() {
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    rm -f "${VIRTUAL_FILES_FILE}" "${VIRTUAL_DIRS_FILE}"
+  fi
+}
+
 show_help() {
   cat <<EOF
 Usage: $(basename "$0") [options]
 
 Options:
   --log-level LEVEL   Set log level (ERROR, WARN, INFO, DEBUG)
+  --verbose, -v       Verbose output (alias for --log-level DEBUG)
   --dry-run           Simulate actions (default)
   --apply             Perform actions
   --help, -h          Show this help
@@ -70,6 +77,10 @@ parse_args() {
       --help|-h)
         show_help
         exit 0
+        ;;
+      --verbose|-v)
+        LOG_LEVEL="DEBUG"
+        shift
         ;;
       --log-level)
         shift
@@ -1351,6 +1362,10 @@ init_action_logging
 if [[ "${RUN_MODE}" == "dry-run" ]]; then
   if ! init_virtual_state; then
     exit 1
+  fi
+  trap cleanup_virtual_state EXIT
+  if [[ ! -s "${VIRTUAL_FILES_FILE}" && ! -s "${VIRTUAL_DIRS_FILE}" ]]; then
+    log_warn "No accessible media directories found"
   fi
 fi
 
