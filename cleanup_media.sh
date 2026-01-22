@@ -141,6 +141,7 @@ find_with_ext_filter() {
   
   if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -eq 0 ]]; then
     # No extension filtering
+    log_debug "find_with_ext_filter: no filtering (empty extension list)"
     find "${dir}" "${find_extra_args[@]}" -type f -print0
     return $?
   fi
@@ -148,9 +149,11 @@ find_with_ext_filter() {
   mapfile -t ext_patterns < <(build_ext_patterns) || true
   if [[ "${#ext_patterns[@]}" -eq 1 ]]; then
     # Single extension - simpler find command
+    log_debug "find_with_ext_filter: single extension mode (${ext_patterns[0]})"
     find "${dir}" "${find_extra_args[@]}" -type f -iname "${ext_patterns[0]}" -print0
   else
     # Multiple extensions - use -o for OR conditions
+    log_debug "find_with_ext_filter: multiple extensions mode (${#ext_patterns[@]} patterns)"
     read -r -a find_args <<< "$(printf -- "-o -iname %s " "${ext_patterns[@]:1}")"
     find "${dir}" "${find_extra_args[@]}" -type f \( -iname "${ext_patterns[0]}" "${find_args[@]}" \) -print0
   fi
@@ -356,6 +359,12 @@ init_virtual_state() {
   local tmp_files
   local tmp_dirs
   local dir
+  local init_start_time
+  local init_elapsed
+  local files_count
+  local dirs_count
+
+  init_start_time="$(date +%s%N)"
 
   tmp_files="$(mktemp -t mediacleanup.virtual.files.XXXXXX)"
   tmp_dirs="$(mktemp -t mediacleanup.virtual.dirs.XXXXXX)"
@@ -378,6 +387,12 @@ init_virtual_state() {
       continue
     fi
   done
+
+  # Performance metrics
+  files_count="$(tr -cd '\0' < "${tmp_files}" | wc -c || echo 0)"
+  dirs_count="$(tr -cd '\0' < "${tmp_dirs}" | wc -c || echo 0)"
+  init_elapsed=$(( ($(date +%s%N) - init_start_time) / 1000000 ))
+  log_debug "Virtual state initialized: ${files_count} files, ${dirs_count} directories in ${init_elapsed}ms"
 
   VIRTUAL_FILES_FILE="${tmp_files}"
   VIRTUAL_DIRS_FILE="${tmp_dirs}"
@@ -732,10 +747,21 @@ plan_touch() {
 
 build_allowed_extensions() {
   local ext
+  local invalid_pattern_count=0
   ALLOWED_FILE_EXT_LC=()
   for ext in "${ALLOWED_FILE_EXT[@]}"; do
+    # Validate extension pattern (should be alphanumeric with optional underscore/dash)
+    if ! [[ "${ext}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+      log_warn "Invalid extension pattern '${ext}' - skipping (only alphanumeric, underscore, dash allowed)"
+      ((invalid_pattern_count++))
+      continue
+    fi
     ALLOWED_FILE_EXT_LC+=("$(lowercase "${ext}")")
   done
+  if [[ ${invalid_pattern_count} -gt 0 ]]; then
+    log_warn "Skipped ${invalid_pattern_count} invalid extension patterns"
+  fi
+  log_debug "Extension patterns loaded: ${#ALLOWED_FILE_EXT_LC[@]} valid patterns"
 }
 
 is_allowed_extension() {
