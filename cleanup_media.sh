@@ -22,10 +22,12 @@ fi
 COLOR_RESET=""
 COLOR_DIR=""
 COLOR_STEP=""
+COLOR_ACTION=""
 if [[ "${USE_COLOR}" -eq 1 ]]; then
   COLOR_RESET="$(tput sgr0)"
   COLOR_DIR="$(tput setaf 4)"
   COLOR_STEP="$(tput setaf 2)"
+  COLOR_ACTION="$(tput setaf 7)"
 fi
 RUN_ID="$(date +%Y%m%d%H%M%S)"
 ACTION_LOG_DIR="/tmp/mediacleanup"
@@ -109,7 +111,7 @@ parse_args() {
 }
 
 log_action() {
-  log_message "INFO" "$1"
+  log_message "INFO" "${COLOR_ACTION}${1}${COLOR_RESET}"
 }
 
 log_dir_header() {
@@ -1485,7 +1487,7 @@ done
 RUN_END_TS="$(date '+%Y-%m-%d %H:%M:%S')"
 log_step "Cleanup complete in ${SECONDS}s"
 log_step "Action list recorded at ${ACTION_LIST_FILE}"
-log_step "Run ended at ${RUN_END_TS}"
+log_action "Run ended at ${RUN_END_TS}"
 log_step "Summary at ${RUN_END_TS}:"
 log_step "Action   Count"
 log_step "Moves    ${ACTION_COUNT_MOVE}"
@@ -1495,10 +1497,16 @@ log_step "Rmdirs   ${ACTION_COUNT_RMDIR}"
 log_step "Mkdirs   ${ACTION_COUNT_MKDIR}"
 log_step "Touches  ${ACTION_COUNT_TOUCH}"
 log_step "Outcome   Count"
-log_step "Performed ${OUTCOME_PERFORMED}"
-log_step "Simulated ${OUTCOME_SIMULATED}"
+if [[ "${RUN_MODE}" == "apply" ]]; then
+  log_step "Performed ${OUTCOME_PERFORMED}"
+fi
+if [[ "${RUN_MODE}" == "dry-run" ]]; then
+  log_step "Simulated ${OUTCOME_SIMULATED}"
+fi
 log_step "Skipped   ${OUTCOME_SKIPPED}"
-log_step "Failed    ${OUTCOME_FAILED}"
+if [[ "${RUN_MODE}" == "apply" ]]; then
+  log_step "Failed    ${OUTCOME_FAILED}"
+fi
 if [[ "${RUN_MODE}" == "dry-run" ]]; then
   log_step "Dry-run: no changes made."
 fi
