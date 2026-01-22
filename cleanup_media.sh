@@ -125,43 +125,65 @@ lowercase() {
   echo "$1" | tr '[:upper:]' '[:lower:]'
 }
 
+build_ext_patterns() {
+  local ext
+  for ext in "${ALLOWED_FILE_EXT_LC[@]}"; do
+    echo "*.${ext}"
+  done
+}
+
 filter_virtual_files_by_depth() {
   local dir="$1"
   local depth_check="$2"
-  local entry
   local prefix="${dir}/"
-  local rel
   
-  while IFS= read -r -d '' entry; do
-    if [[ "${entry}" != "${prefix}"* ]]; then
-      continue
-    fi
-    rel="${entry#"${prefix}"}"
-    
-    case "${depth_check}" in
-      root)
-        [[ "${rel}" != */* ]] && printf '%s\0' "${entry}"
-        ;;
-      nested)
-        [[ "${rel}" == */* ]] && printf '%s\0' "${entry}"
-        ;;
-      all)
-        printf '%s\0' "${entry}"
-        ;;
-      *)
-        return 1
-        ;;
-    esac
-  done < "${VIRTUAL_FILES_FILE}"
+  # Use awk for much faster filtering than Bash loops
+  case "${depth_check}" in
+    root)
+      awk -v RS='\0' -v ORS='\0' -v prefix="${prefix}" '
+        substr($0, 1, length(prefix)) == prefix {
+          rel = substr($0, length(prefix) + 1);
+          if (index(rel, "/") == 0) print $0
+        }
+      ' "${VIRTUAL_FILES_FILE}"
+      ;;
+    nested)
+      awk -v RS='\0' -v ORS='\0' -v prefix="${prefix}" '
+        substr($0, 1, length(prefix)) == prefix {
+          rel = substr($0, length(prefix) + 1);
+          if (index(rel, "/") > 0) print $0
+        }
+      ' "${VIRTUAL_FILES_FILE}"
+      ;;
+    all)
+      awk -v RS='\0' -v ORS='\0' -v prefix="${prefix}" '
+        substr($0, 1, length(prefix)) == prefix { print $0 }
+      ' "${VIRTUAL_FILES_FILE}"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
 }
 
 find_root_files() {
   local dir="$1"
+  local ext_patterns
+  local find_args
+  
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
     filter_virtual_files_by_depth "${dir}" "root"
     return 0
   fi
-  find "${dir}" -maxdepth 1 -type f -print0
+  
+  # Filter by allowed extensions in apply mode for speedup
+  if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -gt 0 ]]; then
+    mapfile -t ext_patterns < <(build_ext_patterns) || true
+    read -r -a find_args <<< "$(printf -- "-o -iname %s " "${ext_patterns[@]:1}")"
+    find "${dir}" -maxdepth 1 -type f \( -iname "${ext_patterns[0]}" "${find_args[@]}" \) -print0
+  else
+    find "${dir}" -maxdepth 1 -type f -print0
+  fi
 }
 
 find_nested_files() {
@@ -318,6 +340,8 @@ init_virtual_state() {
   local tmp_files
   local tmp_dirs
   local dir
+  local ext_patterns
+  local find_args
 
   tmp_files="$(mktemp -t mediacleanup.virtual.files.XXXXXX)"
   tmp_dirs="$(mktemp -t mediacleanup.virtual.dirs.XXXXXX)"
@@ -325,14 +349,28 @@ init_virtual_state() {
   : > "${tmp_files}"
   : > "${tmp_dirs}"
 
+  # Build find pattern for allowed extensions to filter early
+  if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -gt 0 ]]; then
+    mapfile -t ext_patterns < <(build_ext_patterns) || true
+  fi
+
   for dir in "${MEDIA_DIRS[@]}"; do
     if [[ ! -d "${dir}" ]]; then
       log_warn "Skipping missing media directory: ${dir}"
       continue
     fi
-    if ! find "${dir}" -type f -print0 >> "${tmp_files}"; then
-      log_warn "Skipping unreadable media directory: ${dir}"
-      continue
+    # Filter by allowed extensions during find to reduce snapshot size
+    if [[ "${#ext_patterns[@]}" -gt 0 ]]; then
+      read -r -a find_args <<< "$(printf -- "-o -iname %s " "${ext_patterns[@]:1}")"
+      if ! find "${dir}" -type f \( -iname "${ext_patterns[0]}" "${find_args[@]}" \) -print0 >> "${tmp_files}"; then
+        log_warn "Skipping unreadable media directory: ${dir}"
+        continue
+      fi
+    else
+      if ! find "${dir}" -type f -print0 >> "${tmp_files}"; then
+        log_warn "Skipping unreadable media directory: ${dir}"
+        continue
+      fi
     fi
     if ! find "${dir}" -type d -print0 >> "${tmp_dirs}"; then
       log_warn "Skipping unreadable media directory: ${dir}"
@@ -771,6 +809,7 @@ validate_media_dirs() {
 
 remove_unwanted_files() {
   local dir="$1"
+  local cached_root_files="$2"  # Unused but maintains signature consistency
   local base_name
   local tmp_files
   log_step "Removing unwanted files"
@@ -952,6 +991,7 @@ ensure_movie_marker() {
 }
 move_files_to_root() {
   local dir="$1"
+  local cached_root_files="$2"  # Unused but maintains signature consistency
   local tmp_files
   local dest
   local dest_display
@@ -983,6 +1023,7 @@ move_files_to_root() {
 
 remove_empty_subdirs() {
   local dir="$1"
+  local cached_root_files="$2"  # Unused but maintains signature consistency
   local tmp_dirs
   local tmp_check
   local tmp_snapshot
@@ -1060,13 +1101,21 @@ remove_empty_subdirs() {
 
 normalize_filenames() {
   local dir="$1"
+  local cached_root_files="$2"
   local tmp_files
   log_step "Normalizing filenames"
-  tmp_files="$(mktemp -t mediacleanup.root.XXXXXX)"
-  if ! find_root_files "${dir}" > "${tmp_files}"; then
-    rm -f "${tmp_files}"
-    return 1
+  
+  # Use cached root files if available (dry-run optimization)
+  if [[ -n "${cached_root_files}" && -f "${cached_root_files}" ]]; then
+    tmp_files="${cached_root_files}"
+  else
+    tmp_files="$(mktemp -t mediacleanup.root.XXXXXX)"
+    if ! find_root_files "${dir}" > "${tmp_files}"; then
+      rm -f "${tmp_files}"
+      return 1
+    fi
   fi
+  
   while IFS= read -r -d '' file; do
     dir_name=$(dirname "${file}")
     base_name=$(basename "${file}")
@@ -1114,11 +1163,16 @@ normalize_filenames() {
       plan_rename "${file}" "${dir_name}/${new_name}"
     fi
   done < "${tmp_files}"
-  rm -f "${tmp_files}"
+  
+  # Only remove if we created it (not using cached)
+  if [[ "${tmp_files}" != "${cached_root_files}" ]]; then
+    rm -f "${tmp_files}"
+  fi
 }
 
 organize_series_files() {
   local dir="$1"
+  local cached_root_files="$2"
   local base_name
   local name_no_ext
   local series_name
@@ -1131,11 +1185,18 @@ organize_series_files() {
   local tmp_files
 
   log_step "Organizing episode files"
-  tmp_files="$(mktemp -t mediacleanup.seriesfiles.XXXXXX)"
-  if ! find_root_files "${dir}" > "${tmp_files}"; then
-    rm -f "${tmp_files}"
-    return 1
+  
+  # Use cached root files if available (dry-run optimization)
+  if [[ -n "${cached_root_files}" && -f "${cached_root_files}" ]]; then
+    tmp_files="${cached_root_files}"
+  else
+    tmp_files="$(mktemp -t mediacleanup.seriesfiles.XXXXXX)"
+    if ! find_root_files "${dir}" > "${tmp_files}"; then
+      rm -f "${tmp_files}"
+      return 1
+    fi
   fi
+  
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
 
@@ -1174,7 +1235,11 @@ organize_series_files() {
 
     plan_move "${file}" "${dest}"
   done < "${tmp_files}"
-  rm -f "${tmp_files}"
+  
+  # Only remove if we created it (not using cached)
+  if [[ "${tmp_files}" != "${cached_root_files}" ]]; then
+    rm -f "${tmp_files}"
+  fi
 }
 
 is_tv_episode_name() {
@@ -1241,6 +1306,7 @@ movie_root_exists() {
 
 organize_movie_series() {
   local dir="$1"
+  local cached_root_files="$2"
   local base_name
   local name_no_ext
   local prefix
@@ -1255,11 +1321,17 @@ organize_movie_series() {
   temp_pairs="$(mktemp -t mediacleanup.pairs.XXXXXX)"
   temp_prefixes="$(mktemp -t mediacleanup.prefixes.XXXXXX)"
 
-  tmp_files="$(mktemp -t mediacleanup.movieseries.XXXXXX)"
-  if ! find_root_files "${dir}" > "${tmp_files}"; then
-    rm -f "${temp_pairs}" "${temp_prefixes}" "${tmp_files}"
-    return 1
+  # Use cached root files if available (dry-run optimization)
+  if [[ -n "${cached_root_files}" && -f "${cached_root_files}" ]]; then
+    tmp_files="${cached_root_files}"
+  else
+    tmp_files="$(mktemp -t mediacleanup.movieseries.XXXXXX)"
+    if ! find_root_files "${dir}" > "${tmp_files}"; then
+      rm -f "${temp_pairs}" "${temp_prefixes}" "${tmp_files}"
+      return 1
+    fi
   fi
+  
   while IFS= read -r -d '' file; do
     base_name=$(basename "${file}")
     if ! should_process_allowed_file "${base_name}"; then
@@ -1269,7 +1341,11 @@ organize_movie_series() {
     prefix="$(get_movie_prefix "${name_no_ext}")" || continue
     printf '%s\t%s\n' "${prefix}" "${file}" >> "${temp_pairs}"
   done < "${tmp_files}"
-  rm -f "${tmp_files}"
+  
+  # Only remove if we created it (not using cached)
+  if [[ "${tmp_files}" != "${cached_root_files}" ]]; then
+    rm -f "${tmp_files}"
+  fi
 
   if [[ -s "${temp_pairs}" ]]; then
     awk -F '\t' '{count[$1]++} END {for (p in count) if (count[p] >= 2) print p}' \
@@ -1311,11 +1387,30 @@ run_cleanup_steps() {
     remove_unwanted_files
     remove_empty_subdirs
   )
+  local cached_root_files=""
+
+  # In dry-run, pre-compute root files once for reuse across normalize/organize steps
+  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
+    cached_root_files="$(mktemp -t mediacleanup.cached.root.XXXXXX)"
+    if ! find_root_files "${dir}" > "${cached_root_files}"; then
+      rm -f "${cached_root_files}"
+      cached_root_files=""
+      log_debug "Failed to cache root files for ${dir}"
+    else
+      local file_count
+      file_count="$(tr -cd '\0' < "${cached_root_files}" | wc -c || true)"
+      log_debug "Cached ${file_count} root files for ${dir}"
+    fi
+  fi
 
   local step
   for step in "${steps[@]}"; do
-    "${step}" "${dir}"
+    "${step}" "${dir}" "${cached_root_files}"
   done
+  
+  if [[ -n "${cached_root_files}" ]]; then
+    rm -f "${cached_root_files}"
+  fi
 }
 
 parse_args "$@"
