@@ -132,6 +132,30 @@ build_ext_patterns() {
   done
 }
 
+find_with_ext_filter() {
+  local dir="$1"
+  shift
+  local find_extra_args=("$@")
+  local ext_patterns
+  local find_args
+  
+  if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -eq 0 ]]; then
+    # No extension filtering
+    find "${dir}" "${find_extra_args[@]}" -type f -print0
+    return $?
+  fi
+  
+  mapfile -t ext_patterns < <(build_ext_patterns) || true
+  if [[ "${#ext_patterns[@]}" -eq 1 ]]; then
+    # Single extension - simpler find command
+    find "${dir}" "${find_extra_args[@]}" -type f -iname "${ext_patterns[0]}" -print0
+  else
+    # Multiple extensions - use -o for OR conditions
+    read -r -a find_args <<< "$(printf -- "-o -iname %s " "${ext_patterns[@]:1}")"
+    find "${dir}" "${find_extra_args[@]}" -type f \( -iname "${ext_patterns[0]}" "${find_args[@]}" \) -print0
+  fi
+}
+
 filter_virtual_files_by_depth() {
   local dir="$1"
   local depth_check="$2"
@@ -168,8 +192,6 @@ filter_virtual_files_by_depth() {
 
 find_root_files() {
   local dir="$1"
-  local ext_patterns
-  local find_args
   
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
     filter_virtual_files_by_depth "${dir}" "root"
@@ -177,13 +199,7 @@ find_root_files() {
   fi
   
   # Filter by allowed extensions in apply mode for speedup
-  if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -gt 0 ]]; then
-    mapfile -t ext_patterns < <(build_ext_patterns) || true
-    read -r -a find_args <<< "$(printf -- "-o -iname %s " "${ext_patterns[@]:1}")"
-    find "${dir}" -maxdepth 1 -type f \( -iname "${ext_patterns[0]}" "${find_args[@]}" \) -print0
-  else
-    find "${dir}" -maxdepth 1 -type f -print0
-  fi
+  find_with_ext_filter "${dir}" "-maxdepth" "1"
 }
 
 find_nested_files() {
@@ -340,8 +356,6 @@ init_virtual_state() {
   local tmp_files
   local tmp_dirs
   local dir
-  local ext_patterns
-  local find_args
 
   tmp_files="$(mktemp -t mediacleanup.virtual.files.XXXXXX)"
   tmp_dirs="$(mktemp -t mediacleanup.virtual.dirs.XXXXXX)"
@@ -349,28 +363,15 @@ init_virtual_state() {
   : > "${tmp_files}"
   : > "${tmp_dirs}"
 
-  # Build find pattern for allowed extensions to filter early
-  if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -gt 0 ]]; then
-    mapfile -t ext_patterns < <(build_ext_patterns) || true
-  fi
-
   for dir in "${MEDIA_DIRS[@]}"; do
     if [[ ! -d "${dir}" ]]; then
       log_warn "Skipping missing media directory: ${dir}"
       continue
     fi
     # Filter by allowed extensions during find to reduce snapshot size
-    if [[ "${#ext_patterns[@]}" -gt 0 ]]; then
-      read -r -a find_args <<< "$(printf -- "-o -iname %s " "${ext_patterns[@]:1}")"
-      if ! find "${dir}" -type f \( -iname "${ext_patterns[0]}" "${find_args[@]}" \) -print0 >> "${tmp_files}"; then
-        log_warn "Skipping unreadable media directory: ${dir}"
-        continue
-      fi
-    else
-      if ! find "${dir}" -type f -print0 >> "${tmp_files}"; then
-        log_warn "Skipping unreadable media directory: ${dir}"
-        continue
-      fi
+    if ! find_with_ext_filter "${dir}" >> "${tmp_files}"; then
+      log_warn "Skipping unreadable media directory: ${dir}"
+      continue
     fi
     if ! find "${dir}" -type d -print0 >> "${tmp_dirs}"; then
       log_warn "Skipping unreadable media directory: ${dir}"
