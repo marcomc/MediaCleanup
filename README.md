@@ -37,6 +37,7 @@ Options:
 - `--log-level LEVEL`: `ERROR`, `WARN`, `INFO`, or `DEBUG` (default: `INFO`)
 - `--dry-run`: simulate actions (default)
 - `--apply`: perform actions
+- `--no-virtual`: disable virtual state in dry-run (slower, but direct)
 
 Notes:
 
@@ -49,6 +50,10 @@ Notes:
   shows full paths. INFO-level lines do not include a `[INFO]` prefix.
 - Dry-run stages planned moves/renames in memory so later steps use the
   projected layout while leaving the filesystem unchanged.
+- `ALLOWED_FILE_EXT` accepts extensions with or without a leading dot. Each
+  entry must be alphanumeric and may include `_` or `-` (examples: `mkv`,
+  `.mp4`, `srt`, `ass`). Invalid entries are skipped; if none remain the
+  script fails fast.
 - The script emits pre-execution action logs for moves, renames, deletes, and
   empty directory removals to stdout.
 - A structured action list is written to `/tmp/mediacleanup/action-list-<timestamp>.txt`

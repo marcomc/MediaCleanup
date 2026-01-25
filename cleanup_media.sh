@@ -13,6 +13,7 @@ CONFIG_PATH="/Users/${USERNAME}/${CONFIG_FILENAME}"
 LOG_LEVEL="INFO"
 RUN_MODE="dry-run"
 USE_VIRTUAL=0
+NO_VIRTUAL=0
 VIRTUAL_FILES_FILE=""
 VIRTUAL_DIRS_FILE=""
 USE_COLOR=0
@@ -60,6 +61,7 @@ Options:
   --verbose, -v       Verbose output (alias for --log-level DEBUG)
   --dry-run           Simulate actions (default)
   --apply             Perform actions
+  --no-virtual        Disable virtual state in dry-run (slower but direct)
   --help, -h          Show this help
 
 Seeds config at: /Users/${USERNAME}/.mediacleanup.conf
@@ -99,6 +101,10 @@ parse_args() {
         ;;
       --dry-run)
         RUN_MODE="dry-run"
+        shift
+        ;;
+      --no-virtual)
+        NO_VIRTUAL=1
         shift
         ;;
       *)
@@ -750,19 +756,28 @@ plan_touch() {
 
 build_allowed_extensions() {
   local ext
+  local normalized
   local invalid_pattern_count=0
   ALLOWED_FILE_EXT_LC=()
   for ext in "${ALLOWED_FILE_EXT[@]}"; do
     # Validate extension pattern (should be alphanumeric with optional underscore/dash)
-    if ! [[ "${ext}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-      log_warn "Invalid extension pattern '${ext}' - skipping (only alphanumeric, underscore, dash allowed)"
+    normalized="${ext}"
+    if [[ "${normalized}" == .* ]]; then
+      normalized="${normalized#.}"
+    fi
+    if ! [[ "${normalized}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+      log_warn "Invalid extension pattern '${ext}' - skipping (use letters, numbers, underscore, dash; optional leading dot)"
       ((invalid_pattern_count++))
       continue
     fi
-    ALLOWED_FILE_EXT_LC+=("$(lowercase "${ext}")")
+    ALLOWED_FILE_EXT_LC+=("$(lowercase "${normalized}")")
   done
   if [[ ${invalid_pattern_count} -gt 0 ]]; then
     log_warn "Skipped ${invalid_pattern_count} invalid extension patterns"
+  fi
+  if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -eq 0 ]]; then
+    log_error "No valid extensions remain after validation"
+    return 1
   fi
   log_debug "Extension patterns loaded: ${#ALLOWED_FILE_EXT_LC[@]} valid patterns"
 }
@@ -840,14 +855,19 @@ validate_media_dirs() {
 remove_unwanted_files() {
   local dir="$1"
   local cached_root_files="$2"  # Unused but maintains signature consistency
+  local cached_all_files="$3"
   local base_name
   local tmp_files
   log_step "Removing unwanted files"
 
-  tmp_files="$(mktemp -t mediacleanup.files.XXXXXX)"
-  if ! find_all_files "${dir}" > "${tmp_files}"; then
-    rm -f "${tmp_files}"
-    return 1
+  if [[ -n "${cached_all_files}" && -f "${cached_all_files}" ]]; then
+    tmp_files="${cached_all_files}"
+  else
+    tmp_files="$(mktemp -t mediacleanup.files.XXXXXX)"
+    if ! find_all_files "${dir}" > "${tmp_files}"; then
+      rm -f "${tmp_files}"
+      return 1
+    fi
   fi
 
   while IFS= read -r -d '' file; do
@@ -860,7 +880,9 @@ remove_unwanted_files() {
       plan_remove "${file}"
     fi
   done < "${tmp_files}"
-  rm -f "${tmp_files}"
+  if [[ "${tmp_files}" != "${cached_all_files}" ]]; then
+    rm -f "${tmp_files}"
+  fi
 }
 
 is_series_root_dir() {
@@ -1407,6 +1429,7 @@ run_cleanup_steps() {
     remove_empty_subdirs
   )
   local cached_root_files=""
+  local cached_all_files=""
 
   # In dry-run, pre-compute root files once for reuse across normalize/organize steps
   if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
@@ -1422,13 +1445,29 @@ run_cleanup_steps() {
     fi
   fi
 
+  if [[ "${RUN_MODE}" == "dry-run" ]]; then
+    cached_all_files="$(mktemp -t mediacleanup.cached.all.XXXXXX)"
+    if ! find_all_files "${dir}" > "${cached_all_files}"; then
+      rm -f "${cached_all_files}"
+      cached_all_files=""
+      log_debug "Failed to cache full file list for ${dir}"
+    else
+      local all_count
+      all_count="$(tr -cd '\0' < "${cached_all_files}" | wc -c || true)"
+      log_debug "Cached ${all_count} total files for ${dir}"
+    fi
+  fi
+
   local step
   for step in "${steps[@]}"; do
-    "${step}" "${dir}" "${cached_root_files}"
+    "${step}" "${dir}" "${cached_root_files}" "${cached_all_files}"
   done
   
   if [[ -n "${cached_root_files}" ]]; then
     rm -f "${cached_root_files}"
+  fi
+  if [[ -n "${cached_all_files}" ]]; then
+    rm -f "${cached_all_files}"
   fi
 }
 
@@ -1451,15 +1490,19 @@ fi
 if ! validate_media_dirs; then
   exit 1
 fi
-build_allowed_extensions
+if ! build_allowed_extensions; then
+  exit 1
+fi
 init_action_logging
 if [[ "${RUN_MODE}" == "dry-run" ]]; then
-  if ! init_virtual_state; then
-    exit 1
-  fi
-  trap cleanup_virtual_state EXIT
-  if [[ ! -s "${VIRTUAL_FILES_FILE}" && ! -s "${VIRTUAL_DIRS_FILE}" ]]; then
-    log_warn "No accessible media directories found"
+  if [[ "${NO_VIRTUAL}" -eq 0 ]]; then
+    if ! init_virtual_state; then
+      exit 1
+    fi
+    trap cleanup_virtual_state EXIT
+    if [[ ! -s "${VIRTUAL_FILES_FILE}" && ! -s "${VIRTUAL_DIRS_FILE}" ]]; then
+      log_warn "No accessible media directories found"
+    fi
   fi
 fi
 
