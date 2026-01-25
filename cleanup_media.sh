@@ -170,35 +170,31 @@ find_with_ext_filter() {
 filter_virtual_files_by_depth() {
   local dir="$1"
   local depth_check="$2"
+  local entry
   local prefix="${dir}/"
-  
-  # Use awk for much faster filtering than Bash loops
-  case "${depth_check}" in
-    root)
-      awk -v RS='\0' -v ORS='\0' -v prefix="${prefix}" '
-        substr($0, 1, length(prefix)) == prefix {
-          rel = substr($0, length(prefix) + 1);
-          if (index(rel, "/") == 0) print $0
-        }
-      ' "${VIRTUAL_FILES_FILE}"
-      ;;
-    nested)
-      awk -v RS='\0' -v ORS='\0' -v prefix="${prefix}" '
-        substr($0, 1, length(prefix)) == prefix {
-          rel = substr($0, length(prefix) + 1);
-          if (index(rel, "/") > 0) print $0
-        }
-      ' "${VIRTUAL_FILES_FILE}"
-      ;;
-    all)
-      awk -v RS='\0' -v ORS='\0' -v prefix="${prefix}" '
-        substr($0, 1, length(prefix)) == prefix { print $0 }
-      ' "${VIRTUAL_FILES_FILE}"
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+  local rel
+
+  while IFS= read -r -d '' entry; do
+    if [[ "${entry}" != "${prefix}"* ]]; then
+      continue
+    fi
+    rel="${entry#"${prefix}"}"
+
+    case "${depth_check}" in
+      root)
+        [[ "${rel}" != */* ]] && printf '%s\0' "${entry}"
+        ;;
+      nested)
+        [[ "${rel}" == */* ]] && printf '%s\0' "${entry}"
+        ;;
+      all)
+        printf '%s\0' "${entry}"
+        ;;
+      *)
+        return 1
+        ;;
+    esac
+  done < "${VIRTUAL_FILES_FILE}"
 }
 
 find_root_files() {

@@ -50,6 +50,8 @@ Notes:
   shows full paths. INFO-level lines do not include a `[INFO]` prefix.
 - Dry-run stages planned moves/renames in memory so later steps use the
   projected layout while leaving the filesystem unchanged.
+- Series roots are recognized only when a `.tvshow` marker is present; without
+  the marker a folder is treated as non-series.
 - `ALLOWED_FILE_EXT` accepts extensions with or without a leading dot. Each
   entry must be alphanumeric and may include `_` or `-` (examples: `mkv`,
   `.mp4`, `srt`, `ass`). Invalid entries are skipped; if none remain the
