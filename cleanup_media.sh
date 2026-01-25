@@ -651,10 +651,15 @@ plan_rename() {
 plan_remove() {
   local target="$1"
   local target_display
+  local base_name
+
+  base_name="$(basename "${target}")"
 
   target_display="$(format_media_path "${target}")"
   if [[ "${RUN_MODE}" == "dry-run" ]]; then
-    log_action "Simulating delete: ${target_display}"
+    if [[ "${base_name}" != ".DS_Store" ]]; then
+      log_action "Simulating delete: ${target_display}"
+    fi
     record_action_list "DELETE" "${target}" ""
     record_action_counts "DELETE" "simulated"
     if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
@@ -662,12 +667,16 @@ plan_remove() {
     fi
     return 0
   fi
-  log_action "Deleting: ${target_display}"
+  if [[ "${base_name}" != ".DS_Store" ]]; then
+    log_action "Deleting: ${target_display}"
+  fi
   record_action_list "DELETE" "${target}" ""
   if rm "${target}"; then
     record_action_counts "DELETE" "performed"
   else
-    log_error "Failed to delete: ${target_display}"
+    if [[ "${base_name}" != ".DS_Store" ]]; then
+      log_error "Failed to delete: ${target_display}"
+    fi
     record_action_counts "DELETE" "failed"
     return 1
   fi
@@ -1104,36 +1113,42 @@ remove_empty_subdirs() {
     return 0
   fi
 
-  tmp_dirs="$(mktemp -t mediacleanup.empty.XXXXXX)"
-  if ! find "${dir}" -depth -mindepth 1 -type d -empty -print0 > "${tmp_dirs}"; then
-    rm -f "${tmp_dirs}"
-    return 1
-  fi
+  changed=1
+  while [[ "${changed}" -eq 1 ]]; do
+    changed=0
+    tmp_dirs="$(mktemp -t mediacleanup.empty.XXXXXX)"
+    if ! find "${dir}" -depth -mindepth 1 -type d -empty -print0 > "${tmp_dirs}"; then
+      rm -f "${tmp_dirs}"
+      return 1
+    fi
 
-  while IFS= read -r -d '' subdir; do
-    if [[ "${subdir}" == "${dir}" ]]; then
-      continue
-    fi
-    if [[ -f "${subdir}/${SERIES_MARKER}" || -f "${subdir}/${MOVIE_MARKER}" ]]; then
-      continue
-    fi
-    tmp_check="$(mktemp -t mediacleanup.check.XXXXXX)"
-    if ! find "${subdir}" -maxdepth 1 -type f ! -name ".DS_Store" -print -quit > "${tmp_check}"; then
-      rm -f "${tmp_check}"
-      continue
-    fi
-    if [[ ! -s "${tmp_check}" ]]; then
-      if [[ -f "${subdir}/.DS_Store" ]]; then
-        plan_remove "${subdir}/.DS_Store"
+    while IFS= read -r -d '' subdir; do
+      if [[ "${subdir}" == "${dir}" ]]; then
+        continue
       fi
-      plan_remove_dir "${subdir}"
+      if [[ -f "${subdir}/${SERIES_MARKER}" || -f "${subdir}/${MOVIE_MARKER}" ]]; then
+        continue
+      fi
+      tmp_check="$(mktemp -t mediacleanup.check.XXXXXX)"
+      if ! find "${subdir}" -maxdepth 1 -type f ! -name ".DS_Store" -print -quit > "${tmp_check}"; then
+        rm -f "${tmp_check}"
+        continue
+      fi
+      if [[ ! -s "${tmp_check}" ]]; then
+        if [[ -f "${subdir}/.DS_Store" ]]; then
+          plan_remove "${subdir}/.DS_Store"
+        fi
+        plan_remove_dir "${subdir}"
+        changed=1
+        rm -f "${tmp_check}"
+        continue
+      fi
       rm -f "${tmp_check}"
-      continue
-    fi
-    rm -f "${tmp_check}"
-    plan_remove_dir "${subdir}"
-  done < "${tmp_dirs}"
-  rm -f "${tmp_dirs}"
+      plan_remove_dir "${subdir}"
+      changed=1
+    done < "${tmp_dirs}"
+    rm -f "${tmp_dirs}"
+  done
 }
 
 normalize_filenames() {
