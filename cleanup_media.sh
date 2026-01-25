@@ -375,8 +375,8 @@ init_virtual_state() {
       log_warn "Skipping missing media directory: ${dir}"
       continue
     fi
-    # Filter by allowed extensions during find to reduce snapshot size
-    if ! find_with_ext_filter "${dir}" >> "${tmp_files}"; then
+    # Keep full snapshot in dry-run so remove_unwanted_files can simulate deletes
+    if ! find "${dir}" -type f -print0 >> "${tmp_files}"; then
       log_warn "Skipping unreadable media directory: ${dir}"
       continue
     fi
