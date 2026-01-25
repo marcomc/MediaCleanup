@@ -2,6 +2,10 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../../pCloud Drive/My Videos/TV Shows"
 		}
-	]
+	],
+	"settings": {}
 }
