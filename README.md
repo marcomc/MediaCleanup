@@ -52,6 +52,8 @@ Notes:
   projected layout while leaving the filesystem unchanged.
 - Series roots are recognized only when a `.tvshow` marker is present; without
   the marker a folder is treated as non-series.
+- When virtual state is disabled (`--no-virtual`), root file scans used by
+  normalization and organization are filtered to `ALLOWED_FILE_EXT` for speed.
 - `ALLOWED_FILE_EXT` accepts extensions with or without a leading dot. Each
   entry must be alphanumeric and may include `_` or `-` (examples: `mkv`,
   `.mp4`, `srt`, `ass`). Invalid entries are skipped; if none remain the
