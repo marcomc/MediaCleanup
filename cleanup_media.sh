@@ -209,10 +209,6 @@ find_root_files() {
 
 find_nested_files() {
   local dir="$1"
-  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    filter_virtual_files_by_depth "${dir}" "nested"
-    return 0
-  fi
   find "${dir}" -mindepth 2 -type f -print0
 }
 
@@ -382,6 +378,11 @@ init_virtual_state() {
     # Filter by allowed extensions during find to reduce snapshot size
     if ! find_with_ext_filter "${dir}" >> "${tmp_files}"; then
       log_warn "Skipping unreadable media directory: ${dir}"
+      continue
+    fi
+    # Always include marker files in the virtual snapshot so series/movie roots are detectable in dry-run mode.
+    if ! find "${dir}" -type f \( -name "${SERIES_MARKER}" -o -name "${MOVIE_MARKER}" \) -print0 >> "${tmp_files}"; then
+      log_warn "Skipping markers for unreadable media directory: ${dir}"
       continue
     fi
     if ! find "${dir}" -type d -print0 >> "${tmp_dirs}"; then
@@ -864,28 +865,9 @@ remove_unwanted_files() {
 
 is_series_root_dir() {
   local dir="$1"
-  local tmp_dirs
   if virtual_file_exists "${dir}/${SERIES_MARKER}"; then
     return 0
   fi
-
-  if [[ "${USE_VIRTUAL}" -eq 1 ]]; then
-    if virtual_dir_has_season_subdir "${dir}"; then
-      return 0
-    fi
-    return 1
-  fi
-
-  tmp_dirs="$(mktemp -t mediacleanup.dirs.XXXXXX)"
-  if ! find "${dir}" -maxdepth 1 -type d -name 'S[0-9][0-9]' -print -quit > "${tmp_dirs}"; then
-    rm -f "${tmp_dirs}"
-    return 1
-  fi
-  if [[ -s "${tmp_dirs}" ]]; then
-    rm -f "${tmp_dirs}"
-    return 0
-  fi
-  rm -f "${tmp_dirs}"
   return 1
 }
 
@@ -912,6 +894,7 @@ build_series_roots() {
     fi
   done < "${tmp_dirs}"
   rm -f "${tmp_dirs}"
+  log_debug "Series roots detected under ${dir}: ${#SERIES_ROOTS[@]}"
 }
 
 build_movie_roots() {
@@ -929,6 +912,7 @@ build_movie_roots() {
     fi
   done < "${tmp_dirs}"
   rm -f "${tmp_dirs}"
+  log_debug "Movie roots detected under ${dir}: ${#MOVIE_ROOTS[@]}"
 }
 
 is_under_series_root() {
@@ -1020,7 +1004,7 @@ ensure_movie_marker() {
 }
 move_files_to_root() {
   local dir="$1"
-  local cached_root_files="$2"  # Unused but maintains signature consistency
+  local cached_root_files="$2"
   local tmp_files
   local dest
   local dest_display
@@ -1030,6 +1014,9 @@ move_files_to_root() {
     rm -f "${tmp_files}"
     return 1
   fi
+  local nested_count
+  nested_count="$(tr -cd '\0' < "${tmp_files}" | wc -c || true)"
+  log_debug "Nested files found under ${dir}: ${nested_count}"
   while IFS= read -r -d '' file; do
     if is_under_series_root "${file}" || is_under_movie_root "${file}"; then
       continue
@@ -1046,6 +1033,9 @@ move_files_to_root() {
       continue
     fi
     plan_move "${file}" "${dest}"
+    if [[ -n "${cached_root_files}" && -f "${cached_root_files}" ]]; then
+      printf '%s\0' "${dest}" >> "${cached_root_files}"
+    fi
   done < "${tmp_files}"
   rm -f "${tmp_files}"
 }
