@@ -772,14 +772,8 @@ build_allowed_extensions() {
     log_warn "Skipped ${invalid_pattern_count} invalid extension patterns"
   fi
   if [[ "${#ALLOWED_FILE_EXT_LC[@]}" -eq 0 ]]; then
-    log_warn "No valid extensions remain after validation; falling back to original entries"
-    for ext in "${ALLOWED_FILE_EXT[@]}"; do
-      normalized="${ext}"
-      if [[ "${normalized}" == .* ]]; then
-        normalized="${normalized#.}"
-      fi
-      ALLOWED_FILE_EXT_LC+=("$(lowercase "${normalized}")")
-    done
+    log_error "No valid extensions remain after validation"
+    return 1
   fi
   log_debug "Extension patterns loaded: ${#ALLOWED_FILE_EXT_LC[@]} valid patterns"
 }
