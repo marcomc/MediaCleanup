@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-01-17  
-**Feature**: /Users/mmassari/Development/MediaCleanup/specs/003-optimize-cleanup-script/spec.md
+**Feature**: ./specs/003-optimize-cleanup-script/spec.md
 
 ## Content Quality
 

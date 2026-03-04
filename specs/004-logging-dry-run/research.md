@@ -1,7 +1,7 @@
 # Research: Logging Levels and Dry-Run
 
 **Date**: 2026-01-20
-**Spec**: /Users/mmassari/Development/MediaCleanup/specs/004-logging-dry-run/spec.md
+**Spec**: ./specs/004-logging-dry-run/spec.md
 
 ## Decision 1: Default run mode
 

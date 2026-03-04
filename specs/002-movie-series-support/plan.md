@@ -1,6 +1,6 @@
 # Implementation Plan: Movie Series Support
 
-**Branch**: `002-movie-series-support` | **Date**: 2026-01-17 | **Spec**: /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/spec.md
+**Branch**: `002-movie-series-support` | **Date**: 2026-01-17 | **Spec**: ./specs/002-movie-series-support/spec.md
 **Input**: Feature specification from `/specs/002-movie-series-support/spec.md`
 
 ## Summary
@@ -38,7 +38,7 @@ actions outside configured roots
 
 ## Phase 0: Research
 
-**Output**: /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/research.md
+**Output**: ./specs/002-movie-series-support/research.md
 
 - Decisions captured for movie series detection, prefix naming, and marker
   handling.
@@ -47,11 +47,11 @@ actions outside configured roots
 
 **Outputs**:
 
-- /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/data-model.md
-- /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/contracts/movie-organization.md
-- /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/quickstart.md
+- ./specs/002-movie-series-support/data-model.md
+- ./specs/002-movie-series-support/contracts/movie-organization.md
+- ./specs/002-movie-series-support/quickstart.md
 
-**Agent Context Updated**: /Users/mmassari/Development/MediaCleanup/AGENTS.md
+**Agent Context Updated**: ./AGENTS.md
 
 ## Constitution Check (post-design)
 
@@ -81,7 +81,7 @@ specs/002-movie-series-support/
 
 ```text
 .
-├── cleanup_media.sh
+├── mediacleanup.sh
 └── README.md
 ```
 

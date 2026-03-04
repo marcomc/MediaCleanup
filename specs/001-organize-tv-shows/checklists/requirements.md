@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding
 **Created**: 2026-01-17
-**Feature**: /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/spec.md
+**Feature**: ./specs/001-organize-tv-shows/spec.md
 
 ## Content Quality
 

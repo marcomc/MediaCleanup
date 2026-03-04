@@ -1,7 +1,7 @@
 # Data Model: Organize TV Shows by Series and Season
 
 **Date**: 2026-01-17
-**Spec**: /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/spec.md
+**Spec**: ./specs/001-organize-tv-shows/spec.md
 
 ## Entities
 

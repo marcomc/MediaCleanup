@@ -1,6 +1,6 @@
 # Implementation Plan: Cleanup Script Optimization
 
-**Branch**: `003-optimize-cleanup-script` | **Date**: 2026-01-17 | **Spec**: /Users/mmassari/Development/MediaCleanup/specs/003-optimize-cleanup-script/spec.md
+**Branch**: `003-optimize-cleanup-script` | **Date**: 2026-01-17 | **Spec**: ./specs/003-optimize-cleanup-script/spec.md
 **Input**: Feature specification from `/specs/003-optimize-cleanup-script/spec.md`
 
 ## Summary
@@ -51,12 +51,12 @@ specs/003-optimize-cleanup-script/
 ### Source Code (repository root)
 
 ```text
-cleanup_media.sh
+mediacleanup.sh
 mediacleanup.conf.sample
 README.md
 ```
 
-**Structure Decision**: Single script repository with root-level shell scripts; optimization work centers on `cleanup_media.sh` and shared helper logic. Validation artifacts live in `specs/003-optimize-cleanup-script/benchmarks.md` and `specs/003-optimize-cleanup-script/action-list-baseline.txt`.
+**Structure Decision**: Single script repository with root-level shell scripts; optimization work centers on `mediacleanup.sh` and shared helper logic. Validation artifacts live in `specs/003-optimize-cleanup-script/benchmarks.md` and `specs/003-optimize-cleanup-script/action-list-baseline.txt`.
 
 ## Complexity Tracking
 

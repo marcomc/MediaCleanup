@@ -2,14 +2,14 @@
 # Copy to your home directory as `~/.mediacleanup.conf`.
 
 GOOGLE_ACCOUNT="username_gmail.com"
-GOOGLE_DRIVE_ROOT="/Users/${USER}/Library/CloudStorage"
+GOOGLE_DRIVE_ROOT="${HOME}/Library/CloudStorage"
 GOOGLE_DRIVE_PATH="GoogleDrive-${GOOGLE_ACCOUNT}/My Drive/Media"
 GOOGLE_DRIVE_BASE="${GOOGLE_DRIVE_ROOT}/${GOOGLE_DRIVE_PATH}"
 MEDIA_DIRS=(
   "${GOOGLE_DRIVE_BASE}/TV Shows"
   "${GOOGLE_DRIVE_BASE}/Movies"
-  "/Users/${USER}/pCloud Drive/My Videos/TV Shows"
-  "/Users/${USER}/pCloud Drive/My Videos/Movies"
+  "${HOME}/pCloud Drive/My Videos/TV Shows"
+  "${HOME}/pCloud Drive/My Videos/Movies"
 )
 ALLOWED_FILE_EXT=(
   "mp4"

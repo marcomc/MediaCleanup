@@ -25,7 +25,7 @@ implementation and testing of each story.
 **Purpose**: Project initialization and basic structure
 
 - [x] T001 Update README.md with folder organization behavior and naming rules
-- [x] T002 [P] Add season/series detection notes to cleanup_media.sh
+- [x] T002 [P] Add season/series detection notes to mediacleanup.sh
 
 ---
 
@@ -36,14 +36,14 @@ can be implemented
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [x] T003 Implement series/season parsing helpers in cleanup_media.sh
-- [x] T004 Implement `.tvshow` marker detection/creation in cleanup_media.sh
-- [x] T005 Implement case-insensitive series folder lookup in cleanup_media.sh
+- [x] T003 Implement series/season parsing helpers in mediacleanup.sh
+- [x] T004 Implement `.tvshow` marker detection/creation in mediacleanup.sh
+- [x] T005 Implement case-insensitive series folder lookup in mediacleanup.sh
 - [x] T006 Implement allowed-extension filtering for organization in
-  cleanup_media.sh
+  mediacleanup.sh
 - [x] T007 Implement explicit handling for unparseable files in
-  cleanup_media.sh
-- [x] T008 Add logging for all move/rename/delete actions in cleanup_media.sh
+  mediacleanup.sh
+- [x] T008 Add logging for all move/rename/delete actions in mediacleanup.sh
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in
 parallel
@@ -60,10 +60,10 @@ folder and verify they land in `Series.Name/S07/`.
 
 ### Implementation for User Story 1
 
-- [x] T009 [US1] Create series folder (if missing) in cleanup_media.sh
-- [x] T010 [US1] Create season subfolder (if missing) in cleanup_media.sh
+- [x] T009 [US1] Create series folder (if missing) in mediacleanup.sh
+- [x] T010 [US1] Create season subfolder (if missing) in mediacleanup.sh
 - [x] T011 [US1] Move eligible episode files to series/season folders in
-  cleanup_media.sh
+  mediacleanup.sh
 
 **Checkpoint**: User Story 1 should be fully functional and testable
 independently
@@ -81,9 +81,9 @@ flattened to the root, renamed, then organized.
 ### Implementation for User Story 2
 
 - [x] T012 [US2] Move nested files to root before normalization in
-  cleanup_media.sh
+  mediacleanup.sh
 - [x] T013 [US2] Ensure normalization runs before series/season organization in
-  cleanup_media.sh
+  mediacleanup.sh
 
 **Checkpoint**: User Story 2 should be fully functional and testable
 independently
@@ -101,9 +101,9 @@ confirm they are preserved during cleanup.
 ### Implementation for User Story 3
 
 - [x] T014 [US3] Skip flattening directories containing `.tvshow` in
-  cleanup_media.sh
+  mediacleanup.sh
 - [x] T015 [US3] Ensure marker is created for new series folders in
-  cleanup_media.sh
+  mediacleanup.sh
 
 **Checkpoint**: User Story 3 should be fully functional and testable
 independently
@@ -114,7 +114,7 @@ independently
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [x] T016 [P] Run shellcheck on cleanup_media.sh (if available)
+- [x] T016 [P] Run shellcheck on mediacleanup.sh (if available)
 - [x] T017 [P] Run markdownlint on updated Markdown files
 - [x] T018 [P] Validate runtime duration on a sample library and note results in
   README.md performance notes section
@@ -156,8 +156,8 @@ independently
 ## Parallel Example: User Story 1
 
 ```bash
-Task: "Create series folder (if missing) in cleanup_media.sh"
-Task: "Create season subfolder (if missing) in cleanup_media.sh"
+Task: "Create series folder (if missing) in mediacleanup.sh"
+Task: "Create season subfolder (if missing) in mediacleanup.sh"
 ```
 
 ---

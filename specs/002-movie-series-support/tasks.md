@@ -25,7 +25,7 @@ implementation and testing of each story.
 **Purpose**: Project initialization and basic structure
 
 - [x] T001 Update README.md with movie series behavior and marker usage
-- [x] T002 [P] Document `.movieseries` handling in cleanup_media.sh
+- [x] T002 [P] Document `.movieseries` handling in mediacleanup.sh
 
 ---
 
@@ -36,14 +36,14 @@ can be implemented
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [x] T003 Implement movie-series prefix parser in cleanup_media.sh
+- [x] T003 Implement movie-series prefix parser in mediacleanup.sh
 - [x] T004 Implement `.movieseries` marker detection/creation in
-  cleanup_media.sh
+  mediacleanup.sh
 - [x] T005 Implement movie-series folder lookup (case-insensitive) in
-  cleanup_media.sh
+  mediacleanup.sh
 - [x] T006 Ensure TV show detection continues to take precedence in
-  cleanup_media.sh
-- [x] T007 Add logging for all move/rename/delete actions in cleanup_media.sh
+  mediacleanup.sh
+- [x] T007 Add logging for all move/rename/delete actions in mediacleanup.sh
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in
 parallel
@@ -59,9 +59,9 @@ there after cleanup.
 
 ### Implementation for User Story 1
 
-- [x] T008 [US1] Skip moving standalone movie files in cleanup_media.sh
+- [x] T008 [US1] Skip moving standalone movie files in mediacleanup.sh
 - [x] T009 [US1] Prevent movie grouping when only a single prefix match exists
-  in cleanup_media.sh
+  in mediacleanup.sh
 
 **Checkpoint**: User Story 1 should be fully functional and testable
 independently
@@ -77,11 +77,11 @@ move into a shared folder with `.movieseries`.
 
 ### Implementation for User Story 2
 
-- [x] T010 [US2] Create movie series folder (if missing) in cleanup_media.sh
+- [x] T010 [US2] Create movie series folder (if missing) in mediacleanup.sh
 - [x] T011 [US2] Add `.movieseries` marker to series folder in
-  cleanup_media.sh
+  mediacleanup.sh
 - [x] T012 [US2] Move matching movie files into series folder in
-  cleanup_media.sh
+  mediacleanup.sh
 
 **Checkpoint**: User Story 2 should be fully functional and testable
 independently
@@ -98,9 +98,9 @@ run cleanup, and verify the folder remains and the movie is moved inside.
 ### Implementation for User Story 3
 
 - [x] T013 [US3] Skip flattening directories containing `.movieseries` in
-  cleanup_media.sh
+  mediacleanup.sh
 - [x] T014 [US3] Allow grouping into existing `.movieseries` folders even with
-  only one new matching file in cleanup_media.sh
+  only one new matching file in mediacleanup.sh
 
 **Checkpoint**: User Story 3 should be fully functional and testable
 independently
@@ -111,7 +111,7 @@ independently
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [x] T015 [P] Run shellcheck on cleanup_media.sh (if available)
+- [x] T015 [P] Run shellcheck on mediacleanup.sh (if available)
 - [x] T016 [P] Run markdownlint on updated Markdown files
 
 ---
@@ -151,8 +151,8 @@ independently
 ## Parallel Example: User Story 2
 
 ```bash
-Task: "Create movie series folder (if missing) in cleanup_media.sh"
-Task: "Add .movieseries marker to series folder in cleanup_media.sh"
+Task: "Create movie series folder (if missing) in mediacleanup.sh"
+Task: "Add .movieseries marker to series folder in mediacleanup.sh"
 ```
 
 ---

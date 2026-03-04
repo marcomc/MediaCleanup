@@ -1,6 +1,6 @@
 # Implementation Plan: Logging Levels and Dry-Run
 
-**Branch**: `004-logging-dry-run` | **Date**: 2026-01-20 | **Spec**: /Users/mmassari/Development/MediaCleanup/specs/004-logging-dry-run/spec.md
+**Branch**: `004-logging-dry-run` | **Date**: 2026-01-20 | **Spec**: ./specs/004-logging-dry-run/spec.md
 **Input**: Feature specification from `/specs/004-logging-dry-run/spec.md`
 
 ## Summary
@@ -32,7 +32,7 @@ Add leveled logging with consistent output formatting, introduce a safe default 
 
 ## Phase 0: Research
 
-**Output**: /Users/mmassari/Development/MediaCleanup/specs/004-logging-dry-run/research.md
+**Output**: ./specs/004-logging-dry-run/research.md
 
 - Decisions captured for default run mode, log levels, invalid input handling, timestamp policy, and configuration mechanism.
 
@@ -40,11 +40,11 @@ Add leveled logging with consistent output formatting, introduce a safe default 
 
 **Outputs**:
 
-- /Users/mmassari/Development/MediaCleanup/specs/004-logging-dry-run/data-model.md
-- /Users/mmassari/Development/MediaCleanup/specs/004-logging-dry-run/contracts/run-logging.md
-- /Users/mmassari/Development/MediaCleanup/specs/004-logging-dry-run/quickstart.md
+- ./specs/004-logging-dry-run/data-model.md
+- ./specs/004-logging-dry-run/contracts/run-logging.md
+- ./specs/004-logging-dry-run/quickstart.md
 
-**Agent Context Updated**: /Users/mmassari/Development/MediaCleanup/AGENTS.md
+**Agent Context Updated**: ./AGENTS.md
 
 ## Constitution Check (post-design)
 
@@ -72,12 +72,12 @@ specs/004-logging-dry-run/
 ### Source Code (repository root)
 
 ```text
-cleanup_media.sh
+mediacleanup.sh
 mediacleanup.conf.sample
 README.md
 ```
 
-**Structure Decision**: Single script repository with root-level shell scripts; logging/dry-run changes apply to `cleanup_media.sh`, with README updates for usage.
+**Structure Decision**: Single script repository with root-level shell scripts; logging/dry-run changes apply to `mediacleanup.sh`, with README updates for usage.
 
 ## Complexity Tracking
 

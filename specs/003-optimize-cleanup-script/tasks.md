@@ -22,7 +22,7 @@ description: "Task list for Cleanup Script Optimization"
 **Purpose**: Establish baseline measurements and artifacts
 
 - [x] T001 Create baseline benchmark log in `specs/003-optimize-cleanup-script/benchmarks.md` with dataset description and initial runtime/action list snapshot
-- [x] T002 [P] Capture baseline action list output in `specs/003-optimize-cleanup-script/action-list-baseline.txt` from the current `cleanup_media.sh` run
+- [x] T002 [P] Capture baseline action list output in `specs/003-optimize-cleanup-script/action-list-baseline.txt` from the current `mediacleanup.sh` run
 
 ---
 
@@ -30,10 +30,10 @@ description: "Task list for Cleanup Script Optimization"
 
 **Purpose**: Shared refactor groundwork required for all stories
 
-- [x] T003 Audit and preserve pre-execution logging for move/rename/delete actions in `cleanup_media.sh`
-- [x] T004 Add explicit guard checks for configured media roots and reject ambiguous/root paths in `cleanup_media.sh`
-- [x] T005 Extract shared helper functions in `cleanup_media.sh` for common rule application and logging
-- [x] T006 Normalize rule evaluation order in `cleanup_media.sh` to ensure deterministic pre-execution action list
+- [x] T003 Audit and preserve pre-execution logging for move/rename/delete actions in `mediacleanup.sh`
+- [x] T004 Add explicit guard checks for configured media roots and reject ambiguous/root paths in `mediacleanup.sh`
+- [x] T005 Extract shared helper functions in `mediacleanup.sh` for common rule application and logging
+- [x] T006 Normalize rule evaluation order in `mediacleanup.sh` to ensure deterministic pre-execution action list
 
 **Checkpoint**: Foundation ready - user story implementation can begin
 
@@ -47,9 +47,9 @@ description: "Task list for Cleanup Script Optimization"
 
 ### Implementation for User Story 1
 
-- [x] T007 [US1] Add runtime timing capture in `cleanup_media.sh` for total run duration
-- [x] T008 [US1] Consolidate repeated filesystem scans into single-pass operations in `cleanup_media.sh`
-- [x] T009 [US1] Reduce repeated parsing by caching derived values in `cleanup_media.sh`
+- [x] T007 [US1] Add runtime timing capture in `mediacleanup.sh` for total run duration
+- [x] T008 [US1] Consolidate repeated filesystem scans into single-pass operations in `mediacleanup.sh`
+- [x] T009 [US1] Reduce repeated parsing by caching derived values in `mediacleanup.sh`
 - [x] T010 [US1] Record post-optimization timings in `specs/003-optimize-cleanup-script/benchmarks.md`
 
 **Checkpoint**: User Story 1 is complete and independently verifiable
@@ -64,8 +64,8 @@ description: "Task list for Cleanup Script Optimization"
 
 ### Implementation for User Story 2
 
-- [x] T011 [US2] Centralize rule evaluation into a single code path in `cleanup_media.sh`
-- [x] T012 [US2] Align per-type handling to shared helpers in `cleanup_media.sh` to eliminate inconsistent branching
+- [x] T011 [US2] Centralize rule evaluation into a single code path in `mediacleanup.sh`
+- [x] T012 [US2] Align per-type handling to shared helpers in `mediacleanup.sh` to eliminate inconsistent branching
 
 **Checkpoint**: User Story 2 is complete and independently verifiable
 
@@ -79,7 +79,7 @@ description: "Task list for Cleanup Script Optimization"
 
 ### Implementation for User Story 3
 
-- [x] T013 [US3] Add or update action list snapshot output in `cleanup_media.sh` for before/after comparisons
+- [x] T013 [US3] Add or update action list snapshot output in `mediacleanup.sh` for before/after comparisons
 - [x] T014 [US3] Document regression verification steps in `specs/003-optimize-cleanup-script/quickstart.md`
 - [x] T015 [US3] Verify unchanged configuration compatibility in `specs/003-optimize-cleanup-script/benchmarks.md`
 
@@ -91,7 +91,7 @@ description: "Task list for Cleanup Script Optimization"
 
 **Purpose**: Validation, documentation, and quality gates
 
-- [x] T016 [P] Address `shellcheck` findings in `cleanup_media.sh`
+- [x] T016 [P] Address `shellcheck` findings in `mediacleanup.sh`
 - [x] T017 [P] Address `markdownlint` findings in `specs/003-optimize-cleanup-script/spec.md` and `specs/003-optimize-cleanup-script/tasks.md`
 - [x] T018 [P] Update `README.md` if any flags, outputs, or behavior notes change
 - [x] T019 [P] Run quickstart validation and record results in `specs/003-optimize-cleanup-script/benchmarks.md`
@@ -126,8 +126,8 @@ description: "Task list for Cleanup Script Optimization"
 ## Parallel Example: User Story 1
 
 ```bash
-Task: "Add runtime timing capture in cleanup_media.sh"
-Task: "Reduce repeated parsing by caching derived values in cleanup_media.sh"
+Task: "Add runtime timing capture in mediacleanup.sh"
+Task: "Reduce repeated parsing by caching derived values in mediacleanup.sh"
 ```
 
 ---

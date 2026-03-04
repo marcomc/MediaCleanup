@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding
 **Created**: 2026-01-17
-**Feature**: /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/spec.md
+**Feature**: ./specs/002-movie-series-support/spec.md
 
 ## Content Quality
 

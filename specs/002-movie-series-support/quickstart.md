@@ -1,7 +1,7 @@
 # Quickstart: Movie Series Support
 
 **Date**: 2026-01-17
-**Spec**: /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/spec.md
+**Spec**: ./specs/002-movie-series-support/spec.md
 
 ## Goal
 
@@ -17,7 +17,7 @@ marked with `.movieseries`.
 3. Run the cleanup script from the repository root:
 
    ```bash
-   ./cleanup_media.sh
+   ./mediacleanup.sh
    ```
 
 4. Verify that standalone movies remain in the root while series movies move

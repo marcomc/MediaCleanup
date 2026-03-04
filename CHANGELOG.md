@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- Interactive `make install`/`make uninstall` entries that copy `mediacleanup.sh`, prompt for media folders, build `~/.mediacleanup.conf`, and verify prerequisites via `make check-prereq`.
+- `LICENSE` (MIT) so the project carries an explicit copyright notice.
+
+### Changed
+
+- Renamed the primary script to `mediacleanup.sh`, updated the README/specs, and removed literal user-specific system paths so documentation stays publish-ready.
+- `mediacleanup.conf.sample` and the runtime default config path now rely on `${HOME}` instead of user-specific system prefixes.
+- Script now fails when `~/.mediacleanup.conf` is missing and points users to `make install` or the sample, since the installer is the canonical place to create configs.
+- `make install` now runs `scripts/install-mediacleanup.sh`, which sanitizes user input and clears stray escape sequences so hitting Enter cleanly accepts the default directory prompt.
+- The installer now fails early when `$INSTALL_DIR` is not writable, explains the permission issue, and tells you to rerun with sudo or change `INSTALL_DIR`.
+
 ## 1.1.0 - 2026-01-20
 
 ### Added
@@ -24,7 +39,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- Initial `cleanup_media.sh` workflow for organizing media libraries.
+- Initial `mediacleanup.sh` workflow for organizing media libraries.
 - Config support via `~/.mediacleanup.conf` and `mediacleanup.conf.sample`.
 - TV show organization into series/season folders with `.tvshow` markers.
 - Movie series grouping into prefix folders with `.movieseries` markers.
@@ -38,7 +53,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 
-- Standalone `rename.sh` utility in favor of `cleanup_media.sh`.
+- Standalone `rename.sh` utility in favor of `mediacleanup.sh`.
 
 ### Docs
 

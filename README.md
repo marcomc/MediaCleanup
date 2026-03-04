@@ -1,9 +1,9 @@
 # MediaCleanup
 
-Single Bash utility for organizing media files. `cleanup_media.sh`
+Single Bash utility for organizing media files. `mediacleanup.sh`
 normalizes a media library and produces action logs.
 
-## cleanup_media.sh
+## mediacleanup.sh
 
 Scope:
 
@@ -25,11 +25,11 @@ Scope:
 Usage:
 
 ```bash
-./cleanup_media.sh
-./cleanup_media.sh --log-level WARN
-./cleanup_media.sh --dry-run
-./cleanup_media.sh --apply
-./cleanup_media.sh --help # for usage details
+./mediacleanup.sh
+./mediacleanup.sh --log-level WARN
+./mediacleanup.sh --dry-run
+./mediacleanup.sh --apply
+./mediacleanup.sh --help # for usage details
 ```
 
 Options:
@@ -43,9 +43,8 @@ Notes:
 
 - This script moves, renames, and deletes files. Review `MEDIA_DIRS` and
   `ALLOWED_FILE_EXT` before running.
-- If `~/.mediacleanup.conf` is missing, the script seeds it from
-  `mediacleanup.conf.sample` and exits so you can personalize it before
-  rerunning.
+- If `~/.mediacleanup.conf` is missing, run `make install` or copy
+  `mediacleanup.conf.sample` to create it before rerunning.
 - Screen output omits the media root prefix by default; `--log-level DEBUG`
   shows full paths. INFO-level lines do not include a `[INFO]` prefix.
 - Dry-run stages planned moves/renames in memory so later steps use the

@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-USERNAME=$(whoami)
 MEDIA_DIRS=()
 ALLOWED_FILE_EXT=()
 ALLOWED_FILE_EXT_LC=()
@@ -8,8 +7,7 @@ SERIES_MARKER=".tvshow"
 MOVIE_MARKER=".movieseries"
 CONFIG_FILENAME=".mediacleanup.conf"
 SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SAMPLE_CONFIG_PATH="${SCRIPT_DIR}/mediacleanup.conf.sample"
-CONFIG_PATH="/Users/${USERNAME}/${CONFIG_FILENAME}"
+CONFIG_PATH="${HOME}/${CONFIG_FILENAME}"
 LOG_LEVEL="INFO"
 RUN_MODE="dry-run"
 USE_VIRTUAL=0
@@ -64,14 +62,15 @@ Options:
   --no-virtual        Disable virtual state in dry-run (slower but direct)
   --help, -h          Show this help
 
-Seeds config at: /Users/${USERNAME}/.mediacleanup.conf
+Config file: ${CONFIG_PATH}
 
 Description:
   Organizes TV shows and movies based on ~/.mediacleanup.conf.
 
 Notes:
-  If ~/.mediacleanup.conf is missing, the script copies
-  mediacleanup.conf.sample and exits so you can personalize it.
+  Ensure ${CONFIG_PATH} exists before running (the bundled Makefile's
+  `install` target creates it interactively; you can also copy
+  mediacleanup.conf.sample manually).
 EOF
 }
 
@@ -808,20 +807,6 @@ should_process_allowed_file() {
   is_allowed_extension "${base_name}"
 }
 
-seed_config_if_missing() {
-  if [[ -f "${CONFIG_PATH}" ]]; then
-    return 0
-  fi
-
-  if [[ ! -f "${SAMPLE_CONFIG_PATH}" ]]; then
-    log_error "Missing sample config: ${SAMPLE_CONFIG_PATH}"
-    return 1
-  fi
-
-  log_action "Seeding config: ${CONFIG_PATH}"
-  cp "${SAMPLE_CONFIG_PATH}" "${CONFIG_PATH}"
-}
-
 load_first_config() {
   if [[ -f "${CONFIG_PATH}" ]]; then
     # shellcheck disable=SC1090
@@ -829,17 +814,6 @@ load_first_config() {
     return 0
   fi
   return 1
-}
-
-ensure_configs() {
-  local failures=0
-  if ! seed_config_if_missing; then
-    failures=$((failures + 1))
-  fi
-  if [[ "${failures}" -gt 0 ]]; then
-    return 1
-  fi
-  return 0
 }
 
 validate_media_dirs() {
@@ -1488,10 +1462,8 @@ if ! validate_log_level; then
 fi
 
 if ! load_first_config; then
-  if seed_config_if_missing; then
-    log_action "Config seeded at ${CONFIG_PATH}. Update it before rerunning."
-  fi
-  exit 0
+  log_error "Config missing at ${CONFIG_PATH}; run \`make install\` (or copy mediacleanup.conf.sample) before re-running."
+  exit 1
 fi
 
 if [[ "${#MEDIA_DIRS[@]}" -eq 0 || "${#ALLOWED_FILE_EXT[@]}" -eq 0 ]]; then

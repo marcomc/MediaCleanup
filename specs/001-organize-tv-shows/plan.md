@@ -1,6 +1,6 @@
 # Implementation Plan: Organize TV Shows by Series and Season
 
-**Branch**: `001-organize-tv-shows` | **Date**: 2026-01-17 | **Spec**: /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/spec.md
+**Branch**: `001-organize-tv-shows` | **Date**: 2026-01-17 | **Spec**: ./specs/001-organize-tv-shows/spec.md
 **Input**: Feature specification from `/specs/001-organize-tv-shows/spec.md`
 
 ## Summary
@@ -38,7 +38,7 @@ actions outside configured roots
 
 ## Phase 0: Research
 
-**Output**: /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/research.md
+**Output**: ./specs/001-organize-tv-shows/research.md
 
 - Decisions captured for marker files, season naming, case handling, and file
   eligibility.
@@ -47,11 +47,11 @@ actions outside configured roots
 
 **Outputs**:
 
-- /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/data-model.md
-- /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/contracts/file-organization.md
-- /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/quickstart.md
+- ./specs/001-organize-tv-shows/data-model.md
+- ./specs/001-organize-tv-shows/contracts/file-organization.md
+- ./specs/001-organize-tv-shows/quickstart.md
 
-**Agent Context Updated**: /Users/mmassari/Development/MediaCleanup/AGENTS.md
+**Agent Context Updated**: ./AGENTS.md
 
 ## Constitution Check (post-design)
 
@@ -81,7 +81,7 @@ specs/001-organize-tv-shows/
 
 ```text
 .
-├── cleanup_media.sh
+├── mediacleanup.sh
 └── README.md
 ```
 

@@ -1,7 +1,7 @@
 # Data Model: Movie Series Support
 
 **Date**: 2026-01-17
-**Spec**: /Users/mmassari/Development/MediaCleanup/specs/002-movie-series-support/spec.md
+**Spec**: ./specs/002-movie-series-support/spec.md
 
 ## Entities
 

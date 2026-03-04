@@ -1,7 +1,7 @@
 # Quickstart: Organize TV Shows by Series and Season
 
 **Date**: 2026-01-17
-**Spec**: /Users/mmassari/Development/MediaCleanup/specs/001-organize-tv-shows/spec.md
+**Spec**: ./specs/001-organize-tv-shows/spec.md
 
 ## Goal
 
@@ -17,7 +17,7 @@ into `Series.Name/Sxx/` folders with a `.tvshow` marker.
 3. Run the cleanup script from the repository root:
 
    ```bash
-   ./cleanup_media.sh
+   ./mediacleanup.sh
    ```
 
 4. Verify that series folders contain a `.tvshow` marker and season subfolders
