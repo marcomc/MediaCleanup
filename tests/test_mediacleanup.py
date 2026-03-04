@@ -212,3 +212,30 @@ def test_update_config_no_changes_when_up_to_date(tmp_path: Path) -> None:
     after = config.read_text(encoding="utf-8")
     assert before == after
     assert "No changes needed" in proc.stdout
+
+
+def test_update_config_inserts_root_options_before_tables(tmp_path: Path) -> None:
+    script = Path(__file__).resolve().parents[1] / "scripts" / "update_config_defaults.py"
+    config = tmp_path / "config.toml"
+    config.write_text(
+        "\n".join(
+            [
+                'media_dirs = ["/tmp/media"]',
+                'allowed_file_ext = ["mkv"]',
+                "",
+                "[custom]",
+                'note = "keep me"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    proc = subprocess.run(
+        [sys.executable, str(script), "--config", str(config)],
+        text=True,
+        capture_output=True,
+    )
+    assert proc.returncode == 0
+    out = config.read_text(encoding="utf-8")
+    assert out.index('output_style = "vibrant"') < out.index("[custom]")

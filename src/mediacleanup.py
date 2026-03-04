@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError as exc:  # pragma: no cover
     raise SystemExit("Python 3.11+ is required") from exc
 
-SCRIPT_VERSION = "2.0.0"
+SCRIPT_VERSION = "2.1.0"
 SERIES_MARKER = ".tvshow"
 MOVIE_MARKER = ".movieseries"
 DEFAULT_CONFIG = Path.home() / ".mediacleanup.toml"

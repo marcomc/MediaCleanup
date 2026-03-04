@@ -40,21 +40,45 @@ def load_toml(path: Path) -> dict:
         raise SystemExit(f"Invalid TOML config at {path}: {exc}") from exc
 
 
+def _first_table_index(lines: list[str]) -> int | None:
+    for idx, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            return idx
+    return None
+
+
 def append_missing_options(path: Path, data: dict) -> list[str]:
     missing = [key for key in DEFAULT_OPTIONS if key not in data]
     if not missing:
         return []
 
     timestamp = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-    lines: list[str] = [
-        "",
+    patch_lines: list[str] = [
         f"# Added by make update-config ({timestamp})",
     ]
     for key in missing:
-        lines.append(f"{key} = {DEFAULT_OPTIONS[key]}")
+        patch_lines.append(f"{key} = {DEFAULT_OPTIONS[key]}")
 
-    with path.open("a", encoding="utf-8") as fh:
-        fh.write("\n".join(lines) + "\n")
+    original = path.read_text(encoding="utf-8")
+    lines = original.splitlines()
+    table_start = _first_table_index(lines)
+
+    if table_start is None:
+        # Keep root keys at root and preserve all user-provided values.
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.extend(patch_lines)
+        rendered = "\n".join(lines) + "\n"
+    else:
+        insert_at = table_start
+        block = patch_lines + [""]
+        lines[insert_at:insert_at] = block
+        rendered = "\n".join(lines)
+        if original.endswith("\n"):
+            rendered += "\n"
+
+    path.write_text(rendered, encoding="utf-8")
     return missing
 
 

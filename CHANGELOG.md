@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
+## [2.1.0] - 2026-03-04
+
+### Added
+
+- Themed CLI output styles (`minimal`, `vibrant`, `pro`) with ANSI + Unicode/ASCII terminal compatibility fallbacks.
+- New `--output-style` CLI option with config-backed defaults via `output_style` in `~/.mediacleanup.toml`.
+- `make update-config` target and `scripts/update_config_defaults.py` to safely add newly supported config keys without overwriting existing user values.
+- Additional pytest coverage for output style validation/override behavior and config update behavior.
+
+### Changed
+
+- Run/log presentation now uses structured banners, directory headers, and summary sections while preserving existing operational information.
+- Config updater now inserts missing top-level keys before table sections to avoid scope errors in TOML files that include tables.
+
 ## [2.0.0] - 2026-03-04
 
 ### Added
