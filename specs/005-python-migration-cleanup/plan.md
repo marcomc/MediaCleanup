@@ -1,6 +1,6 @@
 # Implementation Plan: Python-Only MediaCleanup Migration
 
-**Branch**: `005-python-migration-cleanup` | **Date**: 2026-03-04 | **Spec**: `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/spec.md`
+**Branch**: `005-python-migration-cleanup` | **Date**: 2026-03-04 | **Spec**: `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/spec.md`
 **Input**: Feature specification from `/specs/005-python-migration-cleanup/spec.md`
 
 ## Summary
@@ -29,6 +29,12 @@ Migrate MediaCleanup from Bash to a Python-only runtime while preserving existin
 - ✅ README/lint workflow updates are part of scope.
 - ✅ Constitution language is aligned to Python-first governance for this feature scope.
 - ✅ Implementation gate remains: re-check constitution alignment after design and before completion.
+
+**Re-check Evidence (2026-03-04)**:
+
+- ✅ Constitution dependency policy updated to Python-first language.
+- ✅ Development workflow requires Python linting + markdownlint for modified artifacts.
+- ✅ Safety/reversibility/configuration principles remain intact after amendment.
 
 ## Project Structure
 
@@ -70,7 +76,7 @@ mediacleanup.toml.sample
 
 ## Phase 0: Research Plan
 
-Produce `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md` with final decisions for:
+Produce `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md` with final decisions for:
 
 1. Python CLI entrypoint/package layout for parity and maintainability.
 2. New config schema + strict validation strategy (legacy format rejected with migration guidance).
@@ -86,7 +92,7 @@ Each item must include: **Decision**, **Rationale**, **Alternatives considered**
 
 ### Data Model
 
-Create `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/data-model.md` defining:
+Create `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/data-model.md` defining:
 
 - **CleanupRun**: run_id, mode, timestamps, duration, status, counters.
 - **ActionRecord**: action type, source, destination, outcome, timestamp.
@@ -98,7 +104,7 @@ Include relationships, uniqueness, and state transitions where relevant.
 
 ### Contracts
 
-Create `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/contracts/cleanup-run.openapi.yaml` as behavioral contract for run lifecycle and action reporting:
+Create `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/contracts/cleanup-run.openapi.yaml` as behavioral contract for run lifecycle and action reporting:
 
 - `POST /cleanup-runs` (start dry-run or apply run)
 - `GET /cleanup-runs/{runId}` (run summary)
@@ -109,7 +115,7 @@ Document expected failures: invalid config, unsafe paths, collisions, unreadable
 
 ### Quickstart
 
-Create `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/quickstart.md` covering:
+Create `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/quickstart.md` covering:
 
 - prerequisites (Python 3.11+, macOS/Linux)
 - install flow
@@ -125,7 +131,7 @@ Create `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-clea
 
 Run:
 
-`/Users/mmassari/Development/MediaCleanup/.specify/scripts/bash/update-agent-context.sh codex`
+`${HOME}/Development/MediaCleanup/.specify/scripts/bash/update-agent-context.sh codex`
 
 Ensure only new Python-era technologies/workflows are added and manual AGENTS additions are preserved.
 

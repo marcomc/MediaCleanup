@@ -2,7 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning  
 **Created**: 2026-03-04  
-**Feature**: [spec.md](/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/spec.md)
+**Feature**: [spec.md](${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/spec.md)
 
 ## Content Quality
 

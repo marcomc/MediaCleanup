@@ -1,6 +1,6 @@
 # Tasks: Python-Only MediaCleanup Migration
 
-**Input**: Design documents from `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/`  
+**Input**: Design documents from `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/`  
 **Prerequisites**: plan.md, spec.md  
 **Tests**: Included (spec requires automated validation and macOS end-to-end verification).  
 **Organization**: Tasks are grouped by user story so each story is independently implementable and testable.
@@ -15,10 +15,10 @@
 
 **Purpose**: Establish Python project scaffolding and baseline tooling.
 
-- [ ] T001 Create Python package entry scaffold in `/Users/mmassari/Development/MediaCleanup/src/__init__.py`
-- [ ] T002 Create root CLI launcher in `/Users/mmassari/Development/MediaCleanup/mediacleanup.py`
-- [ ] T003 [P] Create Python installer script scaffold in `/Users/mmassari/Development/MediaCleanup/scripts/install_mediacleanup.py`
-- [ ] T004 [P] Add Python lint/test/install targets in `/Users/mmassari/Development/MediaCleanup/Makefile`
+- [X] T001 Create Python package entry scaffold in `${HOME}/Development/MediaCleanup/src/__init__.py`
+- [X] T002 Create root CLI launcher in `${HOME}/Development/MediaCleanup/mediacleanup.py`
+- [X] T003 [P] Create Python installer script scaffold in `${HOME}/Development/MediaCleanup/scripts/install_mediacleanup.py`
+- [X] T004 [P] Add Python lint/test/install targets in `${HOME}/Development/MediaCleanup/Makefile`
 
 ---
 
@@ -28,12 +28,12 @@
 
 **⚠️ CRITICAL**: No user story implementation starts before this phase completes.
 
-- [ ] T005 Implement CLI argument parsing and mode selection (`--dry-run`, `--apply`, `--log-level`, `--version`) in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T006 Implement structured action logging and summary counters in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T007 Implement explicit path-safety guards for configured media roots in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T008 Implement config loader/validator for new `~/.mediacleanup.toml` format in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T009 [P] Add shared media fixture generator helpers in `/Users/mmassari/Development/MediaCleanup/tests/conftest.py`
-- [ ] T010 Add foundational regression tests for config validation and unsafe path rejection in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T005 Implement CLI argument parsing and mode selection (`--dry-run`, `--apply`, `--log-level`, `--version`) in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T006 Implement structured action logging and summary counters in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T007 Implement explicit path-safety guards for configured media roots in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T008 Implement config loader/validator for new `~/.mediacleanup.toml` format in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T009 [P] Add shared media fixture generator helpers in `${HOME}/Development/MediaCleanup/tests/conftest.py`
+- [X] T010 Add foundational regression tests for config validation and unsafe path rejection in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
 
 **Checkpoint**: Foundation complete; user stories can now be developed and tested independently.
 
@@ -47,18 +47,18 @@
 
 ### Tests for User Story 1
 
-- [ ] T011 [US1] Add dry-run no-mutation integration test in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
-- [ ] T012 [US1] Add apply-mode parity integration test for TV/movie organization in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
-- [ ] T013 [US1] Add collision-handling and deterministic repeat-run test in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T011 [US1] Add dry-run no-mutation integration test in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T012 [US1] Add apply-mode parity integration test for TV/movie organization in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T013 [US1] Add collision-handling and deterministic repeat-run test in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Implement move-files-to-root and empty-subdir cleanup workflow in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T015 [US1] Implement filename normalization rules in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T016 [US1] Implement TV episode organization with `.tvshow` marker behavior in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T017 [US1] Implement movie series grouping with `.movieseries` marker behavior in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T018 [US1] Implement unsupported-file pruning and action-list artifact writing in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T019 [US1] Wire root launcher to package `main()` and verify CLI parity in `/Users/mmassari/Development/MediaCleanup/mediacleanup.py`
+- [X] T014 [US1] Implement move-files-to-root and empty-subdir cleanup workflow in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T015 [US1] Implement filename normalization rules in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T016 [US1] Implement TV episode organization with `.tvshow` marker behavior in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T017 [US1] Implement movie series grouping with `.movieseries` marker behavior in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T018 [US1] Implement unsupported-file pruning and action-list artifact writing in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T019 [US1] Wire root launcher to package `main()` and verify CLI parity in `${HOME}/Development/MediaCleanup/mediacleanup.py`
 
 **Checkpoint**: User Story 1 is independently functional and testable (MVP).
 
@@ -72,16 +72,16 @@
 
 ### Tests for User Story 2
 
-- [ ] T020 [US2] Add installer behavior tests (new install + existing config prompt path) in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
-- [ ] T021 [US2] Add legacy-config rejection and migration-guidance test in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T020 [US2] Add installer behavior tests (new install + existing config prompt path) in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T021 [US2] Add legacy-config rejection and migration-guidance test in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
 
 ### Implementation for User Story 2
 
-- [ ] T022 [US2] Implement interactive install flow, binary copy, and config creation in `/Users/mmassari/Development/MediaCleanup/scripts/install_mediacleanup.py`
-- [ ] T023 [US2] Replace sample config with TOML schema and required keys in `/Users/mmassari/Development/MediaCleanup/mediacleanup.toml.sample`
-- [ ] T024 [US2] Update install/uninstall/check-prereq commands for Python workflow in `/Users/mmassari/Development/MediaCleanup/Makefile`
-- [ ] T025 [US2] Ensure runtime surfaces actionable errors for missing/invalid/legacy config in `/Users/mmassari/Development/MediaCleanup/src/mediacleanup.py`
-- [ ] T026 [US2] Add explicit permission-denied installer handling test coverage in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T022 [US2] Implement interactive install flow, binary copy, and config creation in `${HOME}/Development/MediaCleanup/scripts/install_mediacleanup.py`
+- [X] T023 [US2] Replace sample config with TOML schema and required keys in `${HOME}/Development/MediaCleanup/mediacleanup.toml.sample`
+- [X] T024 [US2] Update install/uninstall/check-prereq commands for Python workflow in `${HOME}/Development/MediaCleanup/Makefile`
+- [X] T025 [US2] Ensure runtime surfaces actionable errors for missing/invalid/legacy config in `${HOME}/Development/MediaCleanup/src/mediacleanup.py`
+- [X] T026 [US2] Add explicit permission-denied installer handling test coverage in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
 
 **Checkpoint**: User Story 2 works independently and does not require Bash installer/runtime usage.
 
@@ -95,14 +95,14 @@
 
 ### Tests for User Story 3
 
-- [ ] T027 [US3] Add doc-consistency verification test for active Bash-reference exclusions in `/Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py`
+- [X] T027 [US3] Add doc-consistency verification test for active Bash-reference exclusions in `${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py`
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Update usage/install/config docs to Python-only guidance in `/Users/mmassari/Development/MediaCleanup/README.md`
-- [ ] T029 [US3] Update project workflow/technology guidance to Python-first in `/Users/mmassari/Development/MediaCleanup/AGENTS.md`
-- [ ] T030 [US3] Record migration release notes and behavior changes in `/Users/mmassari/Development/MediaCleanup/CHANGELOG.md`
-- [ ] T031 [US3] Confirm and finalize governance/template workflow references for Python-first policy in `/Users/mmassari/Development/MediaCleanup/.specify/memory/constitution.md`
+- [X] T028 [US3] Update usage/install/config docs to Python-only guidance in `${HOME}/Development/MediaCleanup/README.md`
+- [X] T029 [US3] Update project workflow/technology guidance to Python-first in `${HOME}/Development/MediaCleanup/AGENTS.md`
+- [X] T030 [US3] Record migration release notes and behavior changes in `${HOME}/Development/MediaCleanup/CHANGELOG.md`
+- [X] T031 [US3] Confirm and finalize governance/template workflow references for Python-first policy in `${HOME}/Development/MediaCleanup/.specify/memory/constitution.md`
 
 **Checkpoint**: User Story 3 is independently verifiable by documentation scan + command validation.
 
@@ -112,14 +112,14 @@
 
 **Purpose**: Final hardening, contracts/design artifacts, and release readiness checks.
 
-- [ ] T032 [P] Create design data model document in `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/data-model.md`
-- [ ] T033 [P] Create behavior contract in `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/contracts/cleanup-run.openapi.yaml`
-- [ ] T034 [P] Create migration quickstart verification guide (including in-scope active artifact list) in `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/quickstart.md`
-- [ ] T035 Complete constitution gate re-check and record pass/fail evidence in `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/plan.md`
-- [ ] T036 Run Python and Markdown quality gates via `/Users/mmassari/Development/MediaCleanup/Makefile`
-- [ ] T037 Run macOS full end-to-end validation and record results in `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md`
-- [ ] T038 Run Linux install + dry-run/apply smoke parity validation and record results in `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md`
-- [ ] T039 Measure install-and-first-run elapsed time and record under-10-minute evidence in `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md`
+- [X] T032 [P] Create design data model document in `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/data-model.md`
+- [X] T033 [P] Create behavior contract in `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/contracts/cleanup-run.openapi.yaml`
+- [X] T034 [P] Create migration quickstart verification guide (including in-scope active artifact list) in `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/quickstart.md`
+- [X] T035 Complete constitution gate re-check and record pass/fail evidence in `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/plan.md`
+- [X] T036 Run Python and Markdown quality gates via `${HOME}/Development/MediaCleanup/Makefile`
+- [X] T037 Run macOS full end-to-end validation and record results in `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md`
+- [X] T038 Run Linux install + dry-run/apply smoke parity validation and record results in `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md`
+- [X] T039 Measure install-and-first-run elapsed time and record under-10-minute evidence in `${HOME}/Development/MediaCleanup/specs/005-python-migration-cleanup/research.md`
 
 ---
 
@@ -151,25 +151,25 @@
 ### User Story 1
 
 ```sh
-Task: "T011 [US1] Add dry-run no-mutation integration test in /Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py"
-Task: "T012 [US1] Add apply-mode parity integration test in /Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py"
-Task: "T013 [US1] Add collision/repeat-run deterministic test in /Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py"
+Task: "T011 [US1] Add dry-run no-mutation integration test in ${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py"
+Task: "T012 [US1] Add apply-mode parity integration test in ${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py"
+Task: "T013 [US1] Add collision/repeat-run deterministic test in ${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py"
 ```
 
 ### User Story 2
 
 ```sh
-Task: "T020 [US2] Add installer behavior tests in /Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py"
-Task: "T021 [US2] Add legacy-config rejection test in /Users/mmassari/Development/MediaCleanup/tests/test_mediacleanup.py"
-Task: "T023 [US2] Replace sample config in /Users/mmassari/Development/MediaCleanup/mediacleanup.toml.sample"
+Task: "T020 [US2] Add installer behavior tests in ${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py"
+Task: "T021 [US2] Add legacy-config rejection test in ${HOME}/Development/MediaCleanup/tests/test_mediacleanup.py"
+Task: "T023 [US2] Replace sample config in ${HOME}/Development/MediaCleanup/mediacleanup.toml.sample"
 ```
 
 ### User Story 3
 
 ```sh
-Task: "T028 [US3] Update README Python-only guidance in /Users/mmassari/Development/MediaCleanup/README.md"
-Task: "T029 [US3] Update AGENTS Python-first workflow in /Users/mmassari/Development/MediaCleanup/AGENTS.md"
-Task: "T030 [US3] Update migration release notes in /Users/mmassari/Development/MediaCleanup/CHANGELOG.md"
+Task: "T028 [US3] Update README Python-only guidance in ${HOME}/Development/MediaCleanup/README.md"
+Task: "T029 [US3] Update AGENTS Python-first workflow in ${HOME}/Development/MediaCleanup/AGENTS.md"
+Task: "T030 [US3] Update migration release notes in ${HOME}/Development/MediaCleanup/CHANGELOG.md"
 ```
 
 ---

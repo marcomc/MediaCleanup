@@ -1,0 +1,78 @@
+openapi: 3.0.3
+info:
+  title: MediaCleanup Run Contract
+  version: 1.0.0
+  description: |
+    Behavioral contract for cleanup run lifecycle and validation artifacts.
+    This contract is a design/test artifact, not a runtime API commitment.
+paths:
+  /cleanup-runs:
+    post:
+      summary: Start a cleanup run
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [mode, configPath]
+              properties:
+                mode:
+                  type: string
+                  enum: [dry-run, apply]
+                configPath:
+                  type: string
+      responses:
+        '202':
+          description: Run accepted
+        '400':
+          description: Invalid config, unsafe path, or malformed request
+  /cleanup-runs/{runId}:
+    get:
+      summary: Get run summary
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Run summary
+        '404':
+          description: Run not found
+  /cleanup-runs/{runId}/actions:
+    get:
+      summary: Get run action list
+      parameters:
+        - in: path
+          name: runId
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: List of actions
+        '404':
+          description: Run not found
+  /health/validation:
+    get:
+      summary: Validation readiness snapshot
+      responses:
+        '200':
+          description: Lint/test/environment readiness status
+components:
+  schemas:
+    ActionRecord:
+      type: object
+      required: [actionType, sourcePath, outcome]
+      properties:
+        actionType:
+          type: string
+          enum: [MOVE, RENAME, DELETE, RMDIR, MKDIR, TOUCH]
+        sourcePath:
+          type: string
+        destinationPath:
+          type: string
+          nullable: true
+        outcome:
+          type: string
+          enum: [simulated, performed, skipped, failed]
