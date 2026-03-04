@@ -1,0 +1,26 @@
+# MediaCleanup configuration (sample)
+# Copy to your home directory as `~/.mediacleanup.toml`.
+
+media_dirs = [
+  "${HOME}/Library/CloudStorage/GoogleDrive-you@example.com/My Drive/Media/TV Shows",
+  "${HOME}/Library/CloudStorage/GoogleDrive-you@example.com/My Drive/Media/Movies",
+  "${HOME}/pCloud Drive/My Videos/TV Shows",
+  "${HOME}/pCloud Drive/My Videos/Movies",
+  "${HOME}/Movies/TV Shows",
+  "${HOME}/Movies/Movies",
+]
+
+allowed_file_ext = [
+  "mp4",
+  "mkv",
+  "avi",
+  "mov",
+  "flv",
+  "wmv",
+  "mpg",
+  "mpeg",
+  "webm",
+  "m4v",
+  "srt",
+  "DS_Store",
+]

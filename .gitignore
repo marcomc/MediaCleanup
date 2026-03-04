@@ -1,3 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+*.egg-info/
+.pytest_cache/
+
+# Universal
 .DS_Store
 Thumbs.db
 *.tmp
@@ -5,4 +15,6 @@ Thumbs.db
 *.code-workspace
 .vscode/
 .idea/
-.specify
+
+# Project tooling
+.specify/

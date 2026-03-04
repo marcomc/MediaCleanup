@@ -1,0 +1,1 @@
+"""MediaCleanup package."""

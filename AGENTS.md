@@ -1,13 +1,16 @@
 # MediaCleanup Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-01-17
+Auto-generated from all feature plans. Last updated: 2026-03-04
 
 ## Active Technologies
 
-- Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr) (003-optimize-cleanup-script)
-- Local filesystem under configured media directories (003-optimize-cleanup-script)
-- Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr) (002-movie-series-support)
-- Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr) (001-organize-tv-shows)
+- Python 3.11+ + Python standard library, pytest, ruff, markdownlint-cli (005-python-migration-cleanup)
+- Local filesystem + user config file (`~/.mediacleanup.toml`) (005-python-migration-cleanup)
+
+- Python 3.11+ (CLI runtime)
+- Standard library file/path operations
+- pytest for automated validation
+- Local filesystem under configured media directories
 
 ## Project Structure
 
@@ -18,19 +21,22 @@ tests/
 
 ## Commands
 
-## Add commands for Bash (macOS system bash)
+- `make check-prereq`
+- `make lint`
+- `make test`
+- `make install`
+- `make uninstall`
 
 ## Code Style
 
-Bash (macOS system bash): Follow standard conventions
+- Python: explicit path handling, deterministic transformations, safe IO guards
 
 ## Recent Changes
 
-- 004-logging-dry-run: Added Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr)
-- 003-optimize-cleanup-script: Added Bash (macOS system bash) + Standard macOS shell tools (find, mv, rm, awk, sed, tr)
-- 003-optimize-cleanup-script: Added Local filesystem under configured media directories
+- 005-python-migration-cleanup: Added Python 3.11+ + Python standard library, pytest, ruff, markdownlint-cli
+
+- 005-python-migration-cleanup: Python-first runtime, installer, config format, and validation workflow.
 
 <!-- MANUAL ADDITIONS START -->
-- Script updates must pass linting (e.g., shellcheck) and any uncovered issues must be resolved rather than silenced.
-- Markdown files must pass MarkdownLint as part of the workflow; `MD013` (line length) is globally disabled via the repository config.
+- Script updates must pass linting and unresolved issues must be fixed instead of silenced.
 <!-- MANUAL ADDITIONS END -->
