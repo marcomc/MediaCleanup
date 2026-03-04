@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+SCRIPT_VERSION="1.2.0"
 MEDIA_DIRS=()
 ALLOWED_FILE_EXT=()
 ALLOWED_FILE_EXT_LC=()
@@ -6,7 +7,6 @@ SERIES_MARKER=".tvshow"
 # Marker for grouped movie series folders.
 MOVIE_MARKER=".movieseries"
 CONFIG_FILENAME=".mediacleanup.conf"
-SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_PATH="${HOME}/${CONFIG_FILENAME}"
 LOG_LEVEL="INFO"
 RUN_MODE="dry-run"
@@ -54,6 +54,8 @@ show_help() {
   cat <<EOF
 Usage: $(basename "$0") [options]
 
+Version: ${SCRIPT_VERSION}
+
 Options:
   --log-level LEVEL   Set log level (ERROR, WARN, INFO, DEBUG)
   --verbose, -v       Verbose output (alias for --log-level DEBUG)
@@ -61,6 +63,7 @@ Options:
   --apply             Perform actions
   --no-virtual        Disable virtual state in dry-run (slower but direct)
   --help, -h          Show this help
+  --version           Show the current script version
 
 Config file: ${CONFIG_PATH}
 
@@ -69,7 +72,7 @@ Description:
 
 Notes:
   Ensure ${CONFIG_PATH} exists before running (the bundled Makefile's
-  `install` target creates it interactively; you can also copy
+  \`install\` target creates it interactively; you can also copy
   mediacleanup.conf.sample manually).
 EOF
 }
@@ -105,6 +108,10 @@ parse_args() {
       --no-virtual)
         NO_VIRTUAL=1
         shift
+        ;;
+      --version)
+        echo "${SCRIPT_VERSION}"
+        exit 0
         ;;
       *)
         echo "Unknown option: $1" >&2

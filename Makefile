@@ -1,10 +1,10 @@
 SHELL := /usr/bin/env bash
 
-INSTALL_DIR ?= /usr/local/bin
+INSTALL_DIR ?= $(HOME)/.local/bin
 CONFIG_PATH ?= $(HOME)/.mediacleanup.conf
 DEFAULT_MEDIA_DIR ?= $(HOME)/Movies/NewMedia
 ALLOWED_EXT := mp4 mkv avi mov flv wmv mpg mpeg webm m4v srt DS_Store
-INSTALL_TARGET := $(INSTALL_DIR)/mediacleanup.sh
+INSTALL_TARGET := $(INSTALL_DIR)/mediacleanup
 PREREQ_CMDS := bash find mv awk sed tr mkdir rmdir touch tput mktemp stat
 
 .PHONY: help install check-prereq uninstall
