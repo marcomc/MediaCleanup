@@ -23,6 +23,7 @@ SERIES_MARKER = ".tvshow"
 MOVIE_MARKER = ".movieseries"
 DEFAULT_CONFIG = Path.home() / ".mediacleanup.toml"
 ACTION_LOG_DIR = Path("/tmp/mediacleanup")
+OUTPUT_STYLES = {"minimal", "vibrant", "pro"}
 
 LOG_LEVELS = {"ERROR": 0, "WARN": 1, "INFO": 2, "DEBUG": 3}
 
@@ -45,6 +46,7 @@ class Counters:
 class Config:
     media_dirs: list[Path]
     allowed_extensions: set[str]
+    output_style: str = "vibrant"
 
 
 @dataclass
@@ -79,6 +81,7 @@ class Context:
     log_level: str
     no_virtual: bool
     action_list_file: Path
+    output_style: str
     counters: Counters = field(default_factory=Counters)
     virtual: VirtualState | None = None
     series_roots: set[Path] = field(default_factory=set)
@@ -92,11 +95,105 @@ class Context:
 class Logger:
     def __init__(self, ctx: Context) -> None:
         self.ctx = ctx
-        self._color = sys.stdout.isatty()
-        self._reset = "\033[0m" if self._color else ""
-        self._dir = "\033[34m" if self._color else ""
-        self._step = "\033[32m" if self._color else ""
-        self._action = "\033[37m" if self._color else ""
+        term = os.environ.get("TERM", "")
+        no_color = os.environ.get("NO_COLOR") is not None
+        self._color = sys.stdout.isatty() and term != "dumb" and not no_color
+        encoding = (sys.stdout.encoding or "").lower()
+        self._unicode = "utf" in encoding
+
+        self._reset = self._code("0")
+        self._bold = self._code("1")
+        self._dim = self._code("2")
+        self._green = self._code("32")
+        self._yellow = self._code("33")
+        self._blue = self._code("34")
+        self._cyan = self._code("36")
+        self._white = self._code("37")
+        self._red = self._code("31")
+        self._style = ctx.output_style
+        self._icons = self._style_icons(self._style)
+        self._step_color = self._style_color(self._style, "step")
+        self._action_color = self._style_color(self._style, "action")
+        self._dir_color = self._style_color(self._style, "dir")
+        self._row_color = self._style_color(self._style, "row")
+
+    def _code(self, value: str) -> str:
+        return f"\033[{value}m" if self._color else ""
+
+    def _style_icons(self, style: str) -> dict[str, tuple[str, str]]:
+        if style == "minimal":
+            return {
+                "warn": ("!", "!"),
+                "error": ("x", "x"),
+                "action": ("·", "-"),
+                "step": ("›", ">"),
+                "dir": ("▸", "DIR"),
+                "play": ("▶", ">"),
+                "summary": ("#", "#"),
+                "bullet": ("-", "-"),
+            }
+        if style == "pro":
+            return {
+                "warn": ("⚠", "!"),
+                "error": ("✖", "x"),
+                "action": ("◆", "*"),
+                "step": ("➜", ">"),
+                "dir": ("🗂️", "DIR"),
+                "play": ("⏵", ">"),
+                "summary": ("▣", "#"),
+                "bullet": ("▪", "-"),
+            }
+        return {
+            "warn": ("⚠️", "!"),
+            "error": ("❌", "x"),
+            "action": ("🔹", "*"),
+            "step": ("→", ">"),
+            "dir": ("📁", "DIR"),
+            "play": ("▶️", ">"),
+            "summary": ("📊", "#"),
+            "bullet": ("•", "-"),
+        }
+
+    def _style_color(self, style: str, token: str) -> str:
+        if style == "minimal":
+            colors = {
+                "step": self._white,
+                "action": self._dim + self._white,
+                "dir": self._bold + self._blue,
+                "row": self._white,
+            }
+        elif style == "pro":
+            colors = {
+                "step": self._cyan,
+                "action": self._green,
+                "dir": self._bold + self._cyan,
+                "row": self._cyan,
+            }
+        else:
+            colors = {
+                "step": self._green,
+                "action": self._white,
+                "dir": self._bold + self._blue,
+                "row": self._green,
+            }
+        return colors[token]
+
+    def _icon(self, unicode_icon: str, ascii_icon: str) -> str:
+        return unicode_icon if self._unicode else ascii_icon
+
+    def _style_icon(self, name: str) -> str:
+        unicode_icon, ascii_icon = self._icons[name]
+        return self._icon(unicode_icon, ascii_icon)
+
+    def _symbol(self, unicode_symbol: str, ascii_symbol: str) -> str:
+        return unicode_symbol if self._unicode else ascii_symbol
+
+    def _separator(self, title: str | None = None) -> str:
+        dash = self._symbol("─", "-")
+        line = dash * 70
+        if title:
+            return f"{self._dim}{line} {title}{self._reset}"
+        return f"{self._dim}{line}{self._reset}"
 
     def _enabled(self, level: str) -> bool:
         return LOG_LEVELS[level] <= LOG_LEVELS[self.ctx.log_level]
@@ -106,6 +203,12 @@ class Logger:
             return
         if level == "INFO":
             print(message)
+        elif level == "WARN":
+            prefix = f"{self._style_icon('warn')} "
+            print(f"{self._yellow}[WARN]{self._reset} {prefix}{message}")
+        elif level == "ERROR":
+            prefix = f"{self._style_icon('error')} "
+            print(f"{self._red}[ERROR]{self._reset} {prefix}{message}")
         else:
             print(f"[{level}] {message}")
 
@@ -119,13 +222,43 @@ class Logger:
         self._print("ERROR", message)
 
     def action(self, message: str) -> None:
-        self._print("INFO", f"{self._action}{message}{self._reset}")
+        icon = self._style_icon("action")
+        self._print("INFO", f"{self._action_color}{icon} {message}{self._reset}")
 
     def step(self, message: str) -> None:
-        self._print("INFO", f"{self._step}{message}{self._reset}")
+        icon = self._style_icon("step")
+        self._print("INFO", f"{self._step_color}{icon} {message}{self._reset}")
 
     def dir_header(self, message: str) -> None:
-        self._print("INFO", f"{self._dir}== {message}{self._reset}")
+        icon = self._style_icon("dir")
+        self._print("INFO", self._separator())
+        self._print("INFO", f"{self._dir_color}{icon} {message}{self._reset}")
+
+    def banner_start(self, when: dt.datetime, mode: str, virtual: bool) -> None:
+        play = self._style_icon("play")
+        mode_label = mode.upper()
+        virtual_label = "on" if virtual else "off"
+        self._print("INFO", self._separator("MEDIA CLEANUP"))
+        self._print(
+            "INFO",
+            f"{self._cyan}{self._bold}{play} Run started at {when.strftime('%Y-%m-%d %H:%M:%S')} ({mode}){self._reset}",
+        )
+        self._print(
+            "INFO",
+            f"{self._dim}Mode: {mode_label} | Virtual model: {virtual_label} | Log level: {self.ctx.log_level} | Theme: {self._style}{self._reset}",
+        )
+
+    def summary_heading(self, when: dt.datetime) -> None:
+        icon = self._style_icon("summary")
+        self._print("INFO", self._separator("RUN SUMMARY"))
+        self._print("INFO", f"{self._cyan}{self._bold}{icon} Summary at {when.strftime('%Y-%m-%d %H:%M:%S')}{self._reset}")
+
+    def table_row(self, key: str, value: int) -> None:
+        self._print("INFO", f"{self._row_color}{key:<10}{self._reset} {value:>6}")
+
+    def table_section(self, name: str) -> None:
+        bullet = self._style_icon("bullet")
+        self._print("INFO", f"{self._bold}{bullet} {name}{self._reset}")
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -136,6 +269,12 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--apply", action="store_true", help="Apply actions")
     parser.add_argument("--no-virtual", action="store_true", help="Disable virtual dry-run model")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG), help="Path to .toml config")
+    parser.add_argument(
+        "--output-style",
+        choices=sorted(OUTPUT_STYLES),
+        default=None,
+        help="Output style override (minimal, vibrant, pro). Falls back to config if omitted.",
+    )
     parser.add_argument("--version", action="store_true", help="Print version and exit")
     args = parser.parse_args(argv)
 
@@ -187,9 +326,16 @@ def load_config(path: Path) -> Config:
     data = _load_toml(path)
     media_dirs = data.get("media_dirs")
     allowed = data.get("allowed_file_ext")
+    output_style = data.get("output_style", "vibrant")
 
     if not isinstance(media_dirs, list) or not isinstance(allowed, list):
         raise SystemExit("Config must contain `media_dirs` and `allowed_file_ext` arrays")
+    if not isinstance(output_style, str):
+        raise SystemExit("Config `output_style` must be a string when provided")
+    output_style = output_style.strip().lower()
+    if output_style not in OUTPUT_STYLES:
+        allowed_styles = ", ".join(sorted(OUTPUT_STYLES))
+        raise SystemExit(f"Invalid output_style `{output_style}` in config; expected one of: {allowed_styles}")
 
     dirs: list[Path] = []
     for value in media_dirs:
@@ -216,7 +362,7 @@ def load_config(path: Path) -> Config:
     if not valid:
         raise SystemExit("No valid extensions remain in allowed_file_ext")
 
-    return Config(media_dirs=dirs, allowed_extensions=valid)
+    return Config(media_dirs=dirs, allowed_extensions=valid, output_style=output_style)
 
 
 def init_action_file() -> Path:
@@ -723,25 +869,26 @@ def _run_for_root(ctx: Context, log: Logger, root: Path) -> None:
 
 
 def _summary(ctx: Context, log: Logger, start: dt.datetime, end: dt.datetime) -> None:
-    log.step(f"Cleanup complete in {int((end-start).total_seconds())}s")
+    elapsed = int((end - start).total_seconds())
+    log.step(f"Cleanup complete in {elapsed}s")
     log.step(f"Action list recorded at {ctx.action_list_file}")
     log.action(f"Run ended at {end.strftime('%Y-%m-%d %H:%M:%S')}")
-    log.step(f"Summary at {end.strftime('%Y-%m-%d %H:%M:%S')}:")
-    log.step("Action   Count")
-    log.step(f"Moves    {ctx.counters.move}")
-    log.step(f"Renames  {ctx.counters.rename}")
-    log.step(f"Deletes  {ctx.counters.delete}")
-    log.step(f"Rmdirs   {ctx.counters.rmdir}")
-    log.step(f"Mkdirs   {ctx.counters.mkdir}")
-    log.step(f"Touches  {ctx.counters.touch}")
-    log.step("Outcome   Count")
+    log.summary_heading(end)
+    log.table_section("Actions")
+    log.table_row("Moves", ctx.counters.move)
+    log.table_row("Renames", ctx.counters.rename)
+    log.table_row("Deletes", ctx.counters.delete)
+    log.table_row("Rmdirs", ctx.counters.rmdir)
+    log.table_row("Mkdirs", ctx.counters.mkdir)
+    log.table_row("Touches", ctx.counters.touch)
+    log.table_section("Outcome")
     if ctx.run_mode == "apply":
-        log.step(f"Performed {ctx.counters.performed}")
+        log.table_row("Performed", ctx.counters.performed)
     if ctx.run_mode == "dry-run":
-        log.step(f"Simulated {ctx.counters.simulated}")
-    log.step(f"Skipped   {ctx.counters.skipped}")
+        log.table_row("Simulated", ctx.counters.simulated)
+    log.table_row("Skipped", ctx.counters.skipped)
     if ctx.run_mode == "apply":
-        log.step(f"Failed    {ctx.counters.failed}")
+        log.table_row("Failed", ctx.counters.failed)
     if ctx.run_mode == "dry-run":
         log.step("Dry-run: no changes made.")
         log.step("To apply these changes, run again with --apply.")
@@ -759,6 +906,7 @@ def main(argv: list[str] | None = None) -> int:
         log_level=args.log_level,
         no_virtual=args.no_virtual,
         action_list_file=action_file,
+        output_style=args.output_style or config.output_style,
     )
     log = Logger(ctx)
 
@@ -768,7 +916,7 @@ def main(argv: list[str] | None = None) -> int:
             log.warn("No accessible media directories found")
 
     start = dt.datetime.now()
-    log.action(f"Run started at {start.strftime('%Y-%m-%d %H:%M:%S')} ({ctx.run_mode})")
+    log.banner_start(start, ctx.run_mode, ctx.use_virtual)
 
     for root in ctx.config.media_dirs:
         log.dir_header(str(root))

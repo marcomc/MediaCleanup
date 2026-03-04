@@ -1,5 +1,10 @@
 # MediaCleanup configuration (sample)
 # Copy to your home directory as `~/.mediacleanup.toml`.
+# Output style themes:
+# - "minimal": subdued, low-noise output
+# - "vibrant": colorful + emoji-rich output
+# - "pro": high-contrast technical output
+output_style = "vibrant"
 
 media_dirs = [
   "${HOME}/Library/CloudStorage/GoogleDrive-you@example.com/My Drive/Media/TV Shows",

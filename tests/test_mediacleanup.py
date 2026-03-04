@@ -39,6 +39,25 @@ def test_invalid_root_path_rejected(tmp_path: Path) -> None:
         main(["--config", str(conf)])
 
 
+def test_invalid_output_style_rejected(tmp_path: Path) -> None:
+    conf = tmp_path / "bad-style.toml"
+    conf.write_text(
+        'media_dirs = ["/tmp/media"]\nallowed_file_ext = ["mkv"]\noutput_style = "neon"\n',
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit):
+        main(["--config", str(conf)])
+
+
+def test_cli_output_style_overrides_config(media_config: tuple[Path, Path], capsys: pytest.CaptureFixture[str]) -> None:
+    media_dir, config = media_config
+    write_config(config, media_dir, extras='output_style = "minimal"')
+
+    assert main(["--config", str(config), "--dry-run", "--no-virtual", "--output-style", "pro"]) == 0
+    output = capsys.readouterr().out
+    assert "Theme: pro" in output
+
+
 def test_dry_run_no_mutation(media_config: tuple[Path, Path]) -> None:
     media_dir, config = media_config
     nested = media_dir / "nested"
@@ -140,3 +159,56 @@ def test_doc_consistency_scan() -> None:
 
     for old in allowed_historical:
         assert old.exists()
+
+
+def test_update_config_adds_missing_options_without_overwrite(tmp_path: Path) -> None:
+    script = Path(__file__).resolve().parents[1] / "scripts" / "update_config_defaults.py"
+    config = tmp_path / "config.toml"
+    config.write_text(
+        "\n".join(
+            [
+                'media_dirs = ["/tmp/media"]',
+                'allowed_file_ext = ["mkv"]',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    proc = subprocess.run(
+        [sys.executable, str(script), "--config", str(config)],
+        text=True,
+        capture_output=True,
+    )
+    assert proc.returncode == 0
+    out = config.read_text(encoding="utf-8")
+    assert 'media_dirs = ["/tmp/media"]' in out
+    assert 'allowed_file_ext = ["mkv"]' in out
+    assert 'output_style = "vibrant"' in out
+
+
+def test_update_config_no_changes_when_up_to_date(tmp_path: Path) -> None:
+    script = Path(__file__).resolve().parents[1] / "scripts" / "update_config_defaults.py"
+    config = tmp_path / "config.toml"
+    config.write_text(
+        "\n".join(
+            [
+                'media_dirs = ["/tmp/media"]',
+                'allowed_file_ext = ["mkv"]',
+                'output_style = "pro"',
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    before = config.read_text(encoding="utf-8")
+
+    proc = subprocess.run(
+        [sys.executable, str(script), "--config", str(config)],
+        text=True,
+        capture_output=True,
+    )
+    assert proc.returncode == 0
+    after = config.read_text(encoding="utf-8")
+    assert before == after
+    assert "No changes needed" in proc.stdout
