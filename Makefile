@@ -7,7 +7,7 @@ PREREQ_CMDS := python3 find mv awk sed tr mkdir rmdir touch mktemp
 VENV_DIR ?= .venv
 VENV_PYTHON := $(VENV_DIR)/bin/python
 
-.PHONY: help install check-prereq uninstall lint test ensure-venv ensure-test-deps
+.PHONY: help install update-config check-prereq uninstall lint test ensure-venv ensure-test-deps
 .DEFAULT_GOAL := help
 
 help:
@@ -15,6 +15,7 @@ help:
 	@printf "Targets:\n"
 	@printf "  help          Show this help (default)\n"
 	@printf "  install       Copy mediacleanup.py and create ~/.mediacleanup.toml (interactive)\n"
+	@printf "  update-config Add missing config options to ~/.mediacleanup.toml safely\n"
 	@printf "  check-prereq  Assert required tools are available\n"
 	@printf "  lint          Run Python lint checks\n"
 	@printf "  test          Run automated tests\n"
@@ -27,6 +28,11 @@ install:
 	CONFIG_PATH="$(CONFIG_PATH)" \
 	DEFAULT_MEDIA_DIR="$(DEFAULT_MEDIA_DIR)" \
 	python3 scripts/install_mediacleanup.py
+
+update-config:
+	@set -eu; \
+	CONFIG_PATH="$(CONFIG_PATH)" \
+	python3 scripts/update_config_defaults.py
 
 check-prereq:
 	@set -eu; \
@@ -55,7 +61,7 @@ ensure-test-deps: ensure-venv
 
 lint:
 	@set -eu; \
-	python3 -m py_compile mediacleanup.py src/mediacleanup.py scripts/install_mediacleanup.py; \
+	python3 -m py_compile mediacleanup.py src/mediacleanup.py scripts/install_mediacleanup.py scripts/update_config_defaults.py; \
 	markdownlint README.md AGENTS.md CHANGELOG.md specs/005-python-migration-cleanup/*.md
 
 test: ensure-test-deps
