@@ -39,4 +39,5 @@ tests/
 
 <!-- MANUAL ADDITIONS START -->
 - Script updates must pass linting and unresolved issues must be fixed instead of silenced.
+- Always update the application version metadata (SCRIPT_VERSION, package __version__, etc.) whenever creating a new changelog entry and GitHub release.
 <!-- MANUAL ADDITIONS END -->
