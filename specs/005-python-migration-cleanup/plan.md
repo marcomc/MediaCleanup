@@ -27,7 +27,8 @@ Migrate MediaCleanup from Bash to a Python-only runtime while preserving existin
 - ✅ Rename/move/delete operations remain pre-logged for reversibility.
 - ✅ Environment-specific configuration remains externalized (user config, top-level defaults).
 - ✅ README/lint workflow updates are part of scope.
-- ⚠️ Constitution currently has shell-first wording; this feature must amend governance text to Python-first to avoid policy conflict.
+- ✅ Constitution language is aligned to Python-first governance for this feature scope.
+- ✅ Implementation gate remains: re-check constitution alignment after design and before completion.
 
 ## Project Structure
 
@@ -117,6 +118,8 @@ Create `/Users/mmassari/Development/MediaCleanup/specs/005-python-migration-clea
 - lint/test commands
 - active-doc/runtime Bash-removal verification
 - mandatory macOS full E2E validation step
+- Linux smoke validation step for install + dry-run/apply parity
+- timed setup verification step for the under-10-minute success criterion
 
 ### Agent Context Update
 
@@ -156,6 +159,7 @@ Task breakdown will include:
 8. Installer behavior with existing config and permission-denied targets is correct.
 9. Active docs/runtime contain no in-scope Bash references after migration.
 10. Linux smoke checks pass and macOS full E2E validation passes.
+11. Install-and-first-run flow is timed and completes in under 10 minutes.
 
 ## Assumptions and Defaults
 

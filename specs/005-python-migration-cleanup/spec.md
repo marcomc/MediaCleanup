@@ -69,6 +69,7 @@ As a contributor, I can rely on project documentation and supporting artifacts t
 - Config extension lists include invalid entries and require validation behavior.
 - Dry-run mode must still provide accurate collision and marker planning without changing filesystem content.
 - Installation is invoked where target binary directories are not writable.
+- Linux runtime behavior diverges from macOS path/permission expectations and must still satisfy parity requirements.
 
 ## Requirements *(mandatory)*
 
@@ -87,6 +88,9 @@ As a contributor, I can rely on project documentation and supporting artifacts t
 - **FR-011**: The system MUST reject legacy configuration formats and provide explicit migration guidance for creating the required new configuration format.
 - **FR-012**: The system MUST provide equivalent supported behavior on macOS and Linux for installation, dry-run/apply execution, and validation workflow.
 - **FR-013**: The system MUST require successful unit/integration checks and full end-to-end dry-run/apply validation on macOS before completion is accepted.
+- **FR-014**: The system MUST treat active-path Bash cleanup as in-scope for these artifacts: runtime entrypoints and scripts under repository root and `/scripts`, plus user-facing project documentation (`README.md`, `AGENTS.md`, and active feature docs under `/specs/005-python-migration-cleanup`).
+- **FR-015**: The system MUST define fixture coverage for validation to include at minimum: nested files, TV episode organization, movie series grouping, filename normalization, unsupported extension removal, destination collisions, unreadable directory handling, and install permission-denied handling.
+- **FR-016**: The system MUST block implementation acceptance until constitution language is updated to remove shell-only governance conflicts for this feature scope.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -104,6 +108,7 @@ As a contributor, I can rely on project documentation and supporting artifacts t
 - Maintainers can run the project with a modern Python runtime available locally on macOS or Linux.
 - Existing spec/history files should be updated where they are considered active project guidance.
 - Historical or archived records may retain Bash references when those references are clearly contextual and not presented as active workflow guidance.
+- The OpenAPI contract produced for this feature is a design and validation artifact, not a commitment to expose a runtime network API.
 
 ## Success Criteria *(mandatory)*
 
@@ -115,3 +120,4 @@ As a contributor, I can rely on project documentation and supporting artifacts t
 - **SC-004**: Contributors can complete install-and-first-run setup in under 10 minutes using only documented Python-first instructions.
 - **SC-005**: Automated test and lint checks complete successfully in local validation before merge, with no unresolved blocking findings.
 - **SC-006**: End-to-end dry-run and apply validations on representative fixtures pass on macOS with zero mismatches against expected outcomes.
+- **SC-007**: Linux smoke validation for install, dry-run, and apply completes successfully on the same representative fixture suite with no parity regressions against expected outcomes.

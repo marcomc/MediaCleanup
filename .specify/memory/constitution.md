@@ -34,30 +34,32 @@ reverted, it MUST be explicitly documented as irreversible.
 
 ### IV. Minimal, Standard Dependencies
 
-Scripts MUST rely only on standard shell tooling available on macOS (bash, find,
-awk, sed, tr) and avoid external dependencies unless strictly necessary and
-clearly documented.
+The primary implementation MUST use Python and standard library capabilities
+where practical. Additional dependencies MUST be minimal, justified, and
+clearly documented. Platform-specific assumptions MUST be explicit.
 
 ### V. Configuration Over Hardcoding
 
 All environment-specific paths and behavioral switches MUST live in clearly
-named variables near the top of the script and be documented in `README.md`.
+named configuration entries or top-level constants and be documented in
+`README.md`.
 
 ## Operational Safety
 
-- Scripts MUST be reviewed for target paths and extension allowlists before
+- Tools MUST be reviewed for target paths and extension allowlists before
   execution.
-- Destructive actions (rm/mv) MUST never target root or ambiguous paths.
-- If a script touches multiple storage providers, each target MUST be a
+- Destructive actions (delete/move) MUST never target root or ambiguous paths.
+- If a tool touches multiple storage providers, each target MUST be a
   distinct top-level directory to avoid cross-volume confusion.
 
 ## Development Workflow
 
-- Any change to shell scripts MUST keep quoting safe and avoid unguarded globs.
-- Run `shellcheck` on modified shell scripts when available and fix reported
-  issues or document justified exceptions.
+- Changes to Python tooling MUST keep path handling explicit and avoid unsafe
+  wildcard expansion.
+- Run Python linting on modified Python files and fix reported issues or
+  document justified exceptions.
 - Run `markdownlint` on modified Markdown files and fix issues before commit.
-- Update `README.md` whenever script usage or behavior changes.
+- Update `README.md` whenever tool usage or behavior changes.
 
 ## Governance
 
