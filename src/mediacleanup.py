@@ -13,12 +13,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
+from . import __version__
+
 try:
     import tomllib
 except ModuleNotFoundError as exc:  # pragma: no cover
     raise SystemExit("Python 3.11+ is required") from exc
 
-SCRIPT_VERSION = "2.1.0"
+SCRIPT_VERSION = __version__
 SERIES_MARKER = ".tvshow"
 MOVIE_MARKER = ".movieseries"
 DEFAULT_CONFIG = Path.home() / ".mediacleanup.toml"
