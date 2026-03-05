@@ -40,4 +40,6 @@ tests/
 <!-- MANUAL ADDITIONS START -->
 - Script updates must pass linting and unresolved issues must be fixed instead of silenced.
 - Always update the application version metadata (SCRIPT_VERSION, package __version__, etc.) whenever creating a new changelog entry and GitHub release.
+- Run `make lint` (and resolve any reported issues) before making commits or publishing releases.
+- Wait for explicit user approval before creating commits, tags, or GitHub releases; do not proceed automatically.
 <!-- MANUAL ADDITIONS END -->

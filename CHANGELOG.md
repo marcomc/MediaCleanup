@@ -15,9 +15,6 @@ All notable changes to this project are documented in this file.
 
 - Run/log presentation now uses structured banners, directory headers, and summary sections while preserving existing operational information.
 - Config updater now inserts missing top-level keys before table sections to avoid scope errors in TOML files that include tables.
-
-### Changed
-
 - Log messages for `move`/`rename` are now printed as aligned `from`/`to` pairs with wrapping so long filenames stay legible, and the README documents the refreshed CLI summary/output format along with the config/runtime expectations.
 - The CLI no longer imports `__version__` via relative imports when installed standalone; the package `__version__` mirrors `SCRIPT_VERSION` so the new installer script keeps working without import errors.
 

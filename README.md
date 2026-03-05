@@ -36,7 +36,7 @@ make update-config
 
 Copy `mediacleanup.toml.sample` to `~/.mediacleanup.toml` and edit it:
 
-```
+```toml
 output_style = "vibrant"
 media_dirs = [
   "${HOME}/Media/TV Shows",
