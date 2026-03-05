@@ -74,19 +74,25 @@ You can read the summary at the end of the CLI output. A typical dry-run looks l
 
 ```text
 ────────────────────────────────────────────────────────────────────── MEDIA CLEANUP
-▶ Run started at 2026-03-04 17:47:23 (dry-run)
+▶ Run started at 2026-03-05 15:49:54 (dry-run)
 Mode: DRY-RUN | Virtual model: on | Log level: INFO | Theme: minimal
 ──────────────────────────────────────────────────────────────────────
 ▸ /private/tmp/mediacleanup-sample/TV
 › Moving files from nested dirs to root
-· Simulating move: Season-1/Sample.Show.S01E01.mp4 -> Sample.Show.S01E01.mp4
+· Simulating move
+  from Season-1/Sample.Show.S01E01.mp4
+  to   Sample.Show.S01E01.mp4
 › Normalizing filenames
-· Simulating rename: Sample.Show.S01E01.mp4 -> Sample.Show.S01e01.mp4
+· Simulating rename
+  from Sample.Show.S01E01.mp4
+  to   Sample.Show.S01e01.mp4
 › Organizing episode files
 · Simulating mkdir: Sample.Show
 · Simulating marker: Sample.Show/.tvshow
 · Simulating mkdir: Sample.Show/S01
-· Simulating move: Sample.Show.S01e01.mp4 -> Sample.Show/S01/Sample.Show.S01E01.mp4
+· Simulating move
+  from Sample.Show.S01e01.mp4
+  to   Sample.Show/S01/Sample.Show.S01E01.mp4
 › Organizing movie series
 › Removing unwanted files
 › Removing empty subdirectories
@@ -100,10 +106,10 @@ Mode: DRY-RUN | Virtual model: on | Log level: INFO | Theme: minimal
 › Removing unwanted files
 › Removing empty subdirectories
 › Cleanup complete in 0s
-› Action list recorded at /tmp/mediacleanup/action-list-20260304174723.txt
-· Run ended at 2026-03-04 17:47:23
+› Action list recorded at /tmp/mediacleanup/action-list-20260305154954.txt
+· Run ended at 2026-03-05 15:49:54
 ────────────────────────────────────────────────────────────────────── RUN SUMMARY
-# Summary at 2026-03-04 17:47:23
+# Summary at 2026-03-05 15:49:54
 - Actions
 Moves           2
 Renames         1

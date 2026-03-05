@@ -9,6 +9,7 @@ import os
 import re
 import shutil
 import sys
+import textwrap
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
@@ -236,6 +237,29 @@ class Logger:
         self._print("INFO", self._separator())
         self._print("INFO", f"{self._dir_color}{icon} {message}{self._reset}")
 
+    def action_paths(self, label: str, before: str, after: str) -> None:
+        icon = self._style_icon("action")
+        self._print("INFO", f"{self._action_color}{icon} {label}{self._reset}")
+        term_width = shutil.get_terminal_size(fallback=(80, 20)).columns
+        total_width = max(60, term_width)
+        indent = 2
+        label_width = 5  # enough for "from " / "to   "
+        available = max(total_width - indent - label_width, 30)
+
+        for line in self._wrap_lines("from", before, available, indent, label_width):
+            self._print("INFO", line)
+        for line in self._wrap_lines("to", after, available, indent, label_width):
+            self._print("INFO", line)
+
+    def _wrap_lines(self, prefix: str, text: str, width: int, indent: int, label_width: int) -> list[str]:
+        padded = prefix.ljust(label_width)
+        wrapped = textwrap.wrap(text, width=width) or [""]
+        lines = [f"{' ' * indent}{padded}{wrapped[0]}"]
+        subsequent_indent = " " * (indent + label_width)
+        for rest in wrapped[1:]:
+            lines.append(f"{subsequent_indent}{rest}")
+        return lines
+
     def banner_start(self, when: dt.datetime, mode: str, virtual: bool) -> None:
         play = self._style_icon("play")
         mode_label = mode.upper()
@@ -455,7 +479,7 @@ def _execute_file_op(ctx: Context, log: Logger, action: str, verb: str, source: 
     _record_action(ctx, action, source, dest)
 
     if ctx.run_mode == "dry-run":
-        log.action(f"Simulating {verb}: {src} -> {dst}")
+        log.action_paths(f"Simulating {verb}", src, dst)
         _bump(ctx, action, "simulated")
         if ctx.use_virtual:
             ctx.virtual.remove_file(source)
@@ -465,7 +489,7 @@ def _execute_file_op(ctx: Context, log: Logger, action: str, verb: str, source: 
     try:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(source), str(dest))
-        log.action(f"{verb.capitalize()} file: {src} -> {dst}")
+        log.action_paths(f"{verb.capitalize()} file", src, dst)
         _bump(ctx, action, "performed")
         return True
     except OSError:
